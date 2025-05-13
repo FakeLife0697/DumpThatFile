@@ -23,7 +23,7 @@ class RSA(Encryption):
         self._enc_type = "RSA"
         self._key_size = 2048
     
-    def generate_rsa_key(self):
+    def generate_key(self):
         private_key = None
         public_key = None
         

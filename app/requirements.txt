@@ -1,0 +1,5 @@
+cryptography==44.0.3
+Flask==3.1.0
+Flask_RESTful==0.3.10
+MarkupSafe==3.0.2
+supabase==2.15.1
