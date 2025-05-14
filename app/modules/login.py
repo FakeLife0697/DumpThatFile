@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from app.supabase import getPublicClient, getAdminClient
+from app.supabase_client import getPublicClient, getAdminClient
 from functools import wraps
 
 login_bp = Blueprint('login', __name__)

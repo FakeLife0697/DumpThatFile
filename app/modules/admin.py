@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, reques
 from app.modules.login import is_admin
 from app.modules.home import login_required
 from app.modules.encrypt import SHA256, AES, RSA
-from app.supabase import getPublicClient, getAdminClient
+from app.supabase_client import getPublicClient, getAdminClient
 from functools import wraps
 import uuid
 import os

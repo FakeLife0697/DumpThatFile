@@ -11,7 +11,7 @@ application = Flask(__name__)
     
 def create_app():
     application = Flask(__name__)
-    # application.secret_key = 'your-secret-key'  # Change this to a secure secret key
+    application.secret_key = os.urandom(24)
     
     # Register blueprints
     application.register_blueprint(index_bp)

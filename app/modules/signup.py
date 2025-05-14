@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app.supabase import getPublicClient, getAdminClient
+from app.supabase_client import getPublicClient, getAdminClient
 
 signup_bp = Blueprint('signup', __name__)
 

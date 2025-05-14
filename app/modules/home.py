@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, flash
 from functools import wraps
 from flask_restful import Api
-from app.supabase import getPublicClient, getAdminClient
+from app.supabase_client import getPublicClient, getAdminClient
 from app.modules.encrypt import SHA256, AES, RSA
 import uuid
 import os
