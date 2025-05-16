@@ -75,7 +75,7 @@ def home():
                 return redirect(request.url)
             
             # Get receiver's public key
-            key_result = client.table('user_public_keys').select('public_key').eq('user_id', receiver_id).execute()
+            key_result = client.schema('public').table('users').select('public_key').eq('user_id', receiver_id).execute()
             
             if not key_result.data:
                 flash('Receiver has no valid public key', 'error')
@@ -139,6 +139,7 @@ def home():
             
         except Exception as e:
             flash(f'Error processing file: {str(e)}', 'error')
+            print(e)
             return redirect(request.url)
             
     return render_template('home.html')
@@ -153,13 +154,14 @@ def get_user_key():
     try:
         client = getPublicClient()
         # Use the public view to get public keys
-        result = client.table('user_public_keys').select('public_key').eq('user_id', user_id).execute()
+        result = client.schema('public').table('users').select('public_key').eq('user_id', user_id).execute()
         
         if not result.data:
             return jsonify({'error': 'User has no public key'}), 404
             
         return jsonify({'public_key': result.data[0]['public_key']})
     except Exception as e:
+        print(e)
         return jsonify({'error': str(e)}), 500
 
 @home_bp.route('/get-my-keys', methods=['GET'])
@@ -168,7 +170,7 @@ def get_my_keys():
     try:
         client = getPublicClient()
         # Get both keys from the secure table
-        result = client.table('dtf_secure_info.user_keys').select('*').eq('user_id', session['user'].id).execute()
+        result = client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session['user'].id).execute()
         
         if not result.data:
             return jsonify({'error': 'No keys found'}), 404
@@ -178,6 +180,7 @@ def get_my_keys():
             'private_key': result.data[0]['private_key']
         })
     except Exception as e:
+        print(e)
         return jsonify({'error': str(e)}), 500
 
 @home_bp.route('/upload-file', methods=['POST'])
@@ -186,7 +189,7 @@ def upload_file(receiver_id):
     try:
         # First check if they are friends
         client = getPublicClient()
-        friends_result = client.table('friends').select('*').or_(
+        friends_result = client.schema('public').table('friends').select('*').or_(
             f'user_id.eq.{session["user"].id},friend_id.eq.{session["user"].id}'
         ).and_(
             f'user_id.eq.{receiver_id},friend_id.eq.{receiver_id}'
@@ -197,7 +200,7 @@ def upload_file(receiver_id):
             return redirect(request.url)
         
         # Get receiver's public key
-        key_result = client.table('dtf_secure_info.user_keys').select('public_key').eq('user_id', receiver_id).execute()
+        key_result = client.schema('public').table('users').select('public_key').eq('user_id', receiver_id).execute()
         
         if not key_result.data:
             flash('Receiver has no valid public key', 'error')
@@ -206,4 +209,5 @@ def upload_file(receiver_id):
         receiver_public_key = key_result.data[0]['public_key']
     except Exception as e:
         flash('An error occurred', 'error')
+        print(e)
         return redirect(request.url)

@@ -7,7 +7,7 @@ login_bp = Blueprint('login', __name__)
 def is_admin(user_id):
     admin_client = getAdminClient()
     if admin_client:
-        result = admin_client.table('dtf_secure_info.roles').select('role').eq('user_id', user_id).execute()
+        result = admin_client.schema('dtf_secure_info').table('roles').select('role').eq('user_id', user_id).execute()
         return result.data and result.data[0]['role'] == 'admin'
     return False
 
@@ -35,5 +35,6 @@ def login():
                 
         except Exception as e:
             flash('Invalid email or password', 'error')
+            print(e)
             
     return render_template('login.html')
