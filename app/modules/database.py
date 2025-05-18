@@ -1,1 +1,1 @@
-from .. import supabase
+from .. import supabase_client

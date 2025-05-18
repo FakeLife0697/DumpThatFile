@@ -1,19 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title> DumpThatFile </title>
-    <style>
-        body { font-family: Arial; text-align: center; padding: 50px; background: #f0f0f0; }
-        h1 { font-size: 2.5em; }
-        .btn { padding: 15px 30px; font-size: 1em; margin: 10px; border: none; background-color: #007bff; color: white; cursor: pointer; border-radius: 5px; }
-        .btn:hover { background-color: #0056b3; }
-    </style>
+    <title>Welcome to DumpThatFile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
 </head>
 <body>
-    <h1> Welcome to DumpThatFile </h1>
-    <p> You can leave your files to us here. We will take care of them. </p>
-    <button class="btn" onclick="location.href='{{ url_for('login') }}'"> Login </button>
-    <button class="btn" onclick="location.href='{{ url_for('signup') }}'"> Sign Up </button>
+    <div class="container">
+        <h1>Welcome to DumpThatFile</h1>
+        <div class="auth-buttons">
+            <a href="{{ url_for('login.login') }}" class="btn">Login</a>
+            <a href="{{ url_for('signup.signup') }}" class="btn">Sign Up</a>
+        </div>
+    </div>
 </body>
 </html>

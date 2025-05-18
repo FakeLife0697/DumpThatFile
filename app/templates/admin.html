@@ -1,34 +1,98 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title> Admin - DumpThatFile </title>
-    <style>
-        body { font-family: Arial; background: #fffbe6; padding: 40px; }
-        header { text-align: center; margin-bottom: 40px; }
-        table { width: 80%; margin: auto; border-collapse: collapse; }
-        th, td { padding: 12px; border: 1px solid #ccc; text-align: center; }
-        th { background-color: #ffecb3; }
-        button { padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 3px; }
-        button:hover { background-color: #c82333; }
-    </style>
+    <title>Admin Dashboard - DumpThatFile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
 </head>
 <body>
-    <header>
-        <h1> Admin Dasboard </h1>
-        <p> Manage users and monitor system activities </p>
-    </header>
-    <table>
-        <tr>
-            <th> Users</th>
-            <th> Email </th>
-            <th> Role </th>
-            <th> Actions </th>
-        </tr>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
         
-        <tr>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="upload-section">
+            <h2>Upload File</h2>
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="form-group">
+                    <label for="receiver">Search Receiver:</label>
+                    <input type="text" id="receiverSearch" placeholder="Search by username or email">
+                    <div id="searchResults" class="search-results"></div>
+                    <input type="hidden" id="receiver_id" name="receiver_id" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="file">Select File (max 5MB):</label>
+                    <input type="file" id="file" name="file" required>
+                </div>
+                
+                <button type="submit" class="btn">Upload and Encrypt</button>
+            </form>
+        </div>
+    </div>
 
-        </tr>
-    </table>
+    <script>
+        let searchTimeout;
+        const searchInput = document.getElementById('receiverSearch');
+        const searchResults = document.getElementById('searchResults');
+        const receiverIdInput = document.getElementById('receiver_id');
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                searchResults.innerHTML = '';
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch(`/search-users?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        data.forEach(user => {
+                            const div = document.createElement('div');
+                            div.className = 'search-result-item';
+                            div.textContent = `${user.username} (${user.email})`;
+                            div.onclick = () => selectUser(user);
+                            searchResults.appendChild(div);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }, 300);
+        });
+
+        function selectUser(user) {
+            // Verify user has a valid public key
+            fetch(`/get-user-key?user_id=${user.user_id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Selected user has no valid public key');
+                        return;
+                    }
+                    searchInput.value = `${user.username} (${user.email})`;
+                    receiverIdInput.value = user.user_id;
+                    searchResults.innerHTML = '';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error verifying user key');
+                });
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            if (!receiverIdInput.value) {
+                e.preventDefault();
+                alert('Please select a valid receiver');
+            }
+        });
+    </script>
 </body>
 </html>

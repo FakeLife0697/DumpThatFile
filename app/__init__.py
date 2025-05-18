@@ -1,41 +1,23 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask
 from markupsafe import escape
 import os
+from app.modules.index import index_bp
+from app.modules.login import login_bp
+from app.modules.signup import signup_bp
+from app.modules.home import home_bp
+from app.modules.admin import admin_bp
 
-app = Flask(__name__)
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        if username == 'admin':
-            return redirect(url_for('admin'))
-        return redirect(url_for('home'))
-    return render_template('login.html')
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        return redirect(url_for('login'))
-    return render_template('signup.html')
-
-@app.route('/home')
-def home():
-    return render_template('home.html')
-
-@app.route('/admin')
-def admin():
-    return render_template('admin.html')
-
-# route cho upload file
-@app.route('/upload', methods=['POST'])
-def upload():
-    # get file from request
-    return redirect(url_for('home'))
-
-if __name__ == "__main__":
-    app.run(debug=True)
+application = Flask(__name__)
+    
+def create_app():
+    application = Flask(__name__)
+    application.secret_key = os.urandom(24)
+    
+    # Register blueprints
+    application.register_blueprint(index_bp)
+    application.register_blueprint(login_bp)
+    application.register_blueprint(signup_bp)
+    application.register_blueprint(home_bp)
+    application.register_blueprint(admin_bp)
+    
+    return application
