@@ -67,7 +67,7 @@ def home():
             # First check if they are friends
             client = getPublicClient()
             friends_result = client.table('friends').select('*').or_(
-                f'user_id.eq.{session["user"].id},friend_id.eq.{session["user"].id}'
+                f'user_id.eq.{session["user"]['id']},friend_id.eq.{session["user"]['id']}'
             ).and_(
                 f'user_id.eq.{receiver_id},friend_id.eq.{receiver_id}'
             ).execute()
@@ -172,7 +172,7 @@ def get_my_keys():
     try:
         client = getPublicClient()
         # Get both keys from the secure table
-        result = client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session['user'].id).execute()
+        result = client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session['user']['id']).execute()
         
         if not result.data:
             return jsonify({'error': 'No keys found'}), 404
@@ -192,7 +192,7 @@ def upload_file(receiver_id):
         # First check if they are friends
         client = getPublicClient()
         friends_result = client.schema('public').table('friends').select('*').or_(
-            f'user_id.eq.{session["user"].id},friend_id.eq.{session["user"].id}'
+            f'user_id.eq.{session["user"]['id']},friend_id.eq.{session["user"]['id']}'
         ).and_(
             f'user_id.eq.{receiver_id},friend_id.eq.{receiver_id}'
         ).execute()
@@ -230,18 +230,18 @@ def generate_key_pair():
         while retry_count < max_retries:
             try:
                 # First check if user already has keys
-                existing_keys = admin_client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session['user'].id).execute()
+                existing_keys = admin_client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session['user']['id']).execute()
                 
                 if existing_keys.data:
                     # Update existing keys
                     keys_response = admin_client.schema('dtf_secure_info').table('user_keys').update({
                         'public_key': public_key,
                         'private_key': private_key
-                    }).eq('user_id', session['user'].id).execute()
+                    }).eq('user_id', session['user']['id']).execute()
                 else:
                     # Insert new keys
                     keys_response = admin_client.schema('dtf_secure_info').table('user_keys').insert({
-                        'user_id': session['user'].id,
+                        'user_id': session['user']['id'],
                         'public_key': public_key,
                         'private_key': private_key
                     }).execute()
@@ -249,7 +249,7 @@ def generate_key_pair():
                 # Update public_key in users table
                 user_response = admin_client.schema('public').table('users').update({
                     'public_key': public_key
-                }).eq('user_id', session['user'].id).execute()
+                }).eq('user_id', session['user']['id']).execute()
                 
                 if not user_response.data:
                     raise Exception('Failed to update user public key')
