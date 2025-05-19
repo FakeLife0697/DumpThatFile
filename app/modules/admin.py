@@ -14,7 +14,7 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if 'user' not in session:
             return redirect(url_for('login.login'))
-        if not is_admin(session['user'].id):
+        if not is_admin(session['user']['id']):
             return redirect(url_for('home.home'))
         return f(*args, **kwargs)
     return decorated_function
