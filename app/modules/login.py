@@ -26,12 +26,12 @@ def login():
             
             if response.user:
                 # Store only the necessary user data in session
-                session['user'] = {
-                    'id': response.user.id,
-                    'email': response.user.email,
-                    'user_metadata': response.user.user_metadata
+                session["user"] = {
+                    "id": response.user.id,
+                    "email": response.user.email,
+                    "user_metadata": response.user.user_metadata
                 }
-                session['access_token'] = response.session.access_token
+                session["access_token"] = response.session.access_token
                 
                 # Check if user is admin
                 if is_admin(response.user.id):
