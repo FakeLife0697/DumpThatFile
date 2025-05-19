@@ -1,0 +1,7 @@
+{
+    "JWT": "IHpNmcrmhmN4MPmrE43fvWN/b3hQ3QqMN6JaJkNSU/INq53Nhz0K/k0Vftj6Ue4RreFNfjyruCRonQ0/a8vbQg==",
+    "SUPABASE_PASS": "21120256_21120371",
+    "SUPABASE_PRIVATE_API" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphdXFmdXhjemxjamFxanFtZmxxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MzE0MzM5OCwiZXhwIjoyMDU4NzE5Mzk4fQ.b8UKyrWlD7IouUuHVLRLdwEzNY3Jne_0AnWK131vFJk",
+    "SUPABASE_PUBLIC_API": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphdXFmdXhjemxjamFxanFtZmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxNDMzOTgsImV4cCI6MjA1ODcxOTM5OH0.h_7DUbGRbahu0WpUGfNYJe_CT0SznhycgyxjxdMoo4g",
+    "SUPABASE_URL": "https://zauqfuxczlcjaqjqmflq.supabase.co"
+}
