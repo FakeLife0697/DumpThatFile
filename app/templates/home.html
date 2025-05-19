@@ -16,6 +16,14 @@
             {% endif %}
         {% endwith %}
         
+        <div class="key-management-section">
+            <h2>Key Management</h2>
+            <form method="POST" action="{{ url_for('home.generate_key_pair') }}">
+                <button type="submit" class="btn btn-warning">Generate New Key Pair</button>
+            </form>
+            <p class="key-info">Note: Generating a new key pair will invalidate your previous keys. Make sure to inform your contacts about this change.</p>
+        </div>
+        
         <div class="upload-section">
             <h2>Upload File</h2>
             <form method="POST" enctype="multipart/form-data" id="uploadForm">
