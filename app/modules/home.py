@@ -5,6 +5,8 @@ from app.supabase_client import getPublicClient, getAdminClient
 from app.modules.encrypt import SHA256, AES, RSA
 import uuid
 import os
+import time
+from requests.exceptions import Timeout, RequestException
 
 home_bp = Blueprint('home', __name__)
 api = Api(home_bp)
@@ -211,3 +213,64 @@ def upload_file(receiver_id):
         flash('An error occurred', 'error')
         print(e)
         return redirect(request.url)
+
+@home_bp.route('/generate-key-pair', methods=['POST'])
+@login_required
+def generate_key_pair():
+    try:
+        # Generate new RSA key pair
+        rsa = RSA()
+        private_key, public_key = rsa.generate_key()
+        
+        # Store the new keys
+        admin_client = getAdminClient()
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                # First check if user already has keys
+                existing_keys = admin_client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session['user'].id).execute()
+                
+                if existing_keys.data:
+                    # Update existing keys
+                    keys_response = admin_client.schema('dtf_secure_info').table('user_keys').update({
+                        'public_key': public_key,
+                        'private_key': private_key
+                    }).eq('user_id', session['user'].id).execute()
+                else:
+                    # Insert new keys
+                    keys_response = admin_client.schema('dtf_secure_info').table('user_keys').insert({
+                        'user_id': session['user'].id,
+                        'public_key': public_key,
+                        'private_key': private_key
+                    }).execute()
+                
+                # Update public_key in users table
+                user_response = admin_client.schema('public').table('users').update({
+                    'public_key': public_key
+                }).eq('user_id', session['user'].id).execute()
+                
+                if not user_response.data:
+                    raise Exception('Failed to update user public key')
+                
+                break
+            except (Timeout, RequestException) as e:
+                retry_count += 1
+                if retry_count == max_retries:
+                    raise Exception(f"Database operation timed out after {max_retries} attempts: {str(e)}")
+                time.sleep(1)
+            except Exception as e:
+                raise e
+        
+        if not keys_response.data:
+            flash('Failed to update key pair', 'error')
+            return redirect(url_for('home.home'))
+        
+        flash('Key pair generated successfully!', 'success')
+        return redirect(url_for('home.home'))
+        
+    except Exception as e:
+        flash(f'Error generating key pair: {str(e)}', 'error')
+        print(e)
+        return redirect(url_for('home.home'))

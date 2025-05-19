@@ -60,10 +60,6 @@ def signup():
                 flash('Failed to create authentication account', 'error')
                 return redirect(request.url)
             
-            # Generate RSA key pair for the user
-            rsa = RSA()
-            private_key, public_key = rsa.generate_key()
-            
             # Create user record in your database
             admin_client = getAdminClient()
             retry_count = 0
@@ -88,28 +84,6 @@ def signup():
                 # If user creation fails, we should clean up the auth user
                 # (You might want to implement this cleanup)
                 flash('Failed to create user record', 'error')
-                return redirect(request.url)
-            
-            # Store the user's keys
-            retry_count = 0
-            while retry_count < max_retries:
-                try:
-                    keys_response = admin_client.schema('dtf_secure_info').table('user_keys').insert({
-                        'user_id': auth_response.user.id,
-                        'public_key': public_key,
-                        'private_key': private_key
-                    }).execute()
-                    break
-                except (Timeout, RequestException) as e:
-                    retry_count += 1
-                    if retry_count == max_retries:
-                        raise Exception(f"Database operation timed out after {max_retries} attempts: {str(e)}")
-                    time.sleep(1)
-                except Exception as e:
-                    raise e
-            
-            if not keys_response.data:
-                flash('Failed to create user keys', 'error')
                 return redirect(request.url)
             
             # Set default role as 'user'
