@@ -1,23 +1,17 @@
-from flask import Flask
+from flask import Flask, request
 from markupsafe import escape
 import os
-from app.modules.index import index_bp
-from app.modules.login import login_bp
-from app.modules.signup import signup_bp
-from app.modules.home import home_bp
-from app.modules.admin import admin_bp
 
-application = Flask(__name__)
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Hello World!"
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == 'POST':
+        pass
     
-def create_app():
-    application = Flask(__name__)
-    application.secret_key = os.urandom(24)
-    
-    # Register blueprints
-    application.register_blueprint(index_bp)
-    application.register_blueprint(login_bp)
-    application.register_blueprint(signup_bp)
-    application.register_blueprint(home_bp)
-    application.register_blueprint(admin_bp)
-    
-    return application
+if __name__ == "__main__":
+    app.run()
