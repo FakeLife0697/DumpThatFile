@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home - DumpThatFile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to DumpThatFile</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="key-management-section">
+            <h2>Key Management</h2>
+            <form method="POST" action="{{ url_for('home.generate_key_pair') }}">
+                <button type="submit" class="btn btn-warning">Generate New Key Pair</button>
+            </form>
+            <p class="key-info">Note: Generating a new key pair will invalidate your previous keys. Make sure to inform your contacts about this change.</p>
+        </div>
+        
+        <div class="upload-section">
+            <h2>Upload File</h2>
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="form-group">
+                    <label for="receiver">Search Receiver:</label>
+                    <input type="text" id="receiverSearch" placeholder="Search by username or email">
+                    <div id="searchResults" class="search-results"></div>
+                    <input type="hidden" id="receiver_id" name="receiver_id" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="file">Select File (max 5MB):</label>
+                    <input type="file" id="file" name="file" required>
+                </div>
+                
+                <button type="submit" class="btn">Upload and Encrypt</button>
+            </form>
+        </div>
+
+        <div class="upload-section">
+            <h2>Find Users and Add Friends</h2>
+            <input type="text" id="friendSearch" placeholder="Search users to add as friend">
+            <div id="friendResults" class="search-results"></div>
+        </div>
+
+        <div class="upload-section">
+            <h2>Friend List</h2>
+            <ul id="friendList"></ul>
+        </div>
+
+        <div class="upload-section">
+            <h2>Received Files</h2>
+            <ul id="receivedFiles"></ul>
+        </div>
+    </div>
+
+    <script>
+        let searchTimeout;
+        const searchInput = document.getElementById('receiverSearch');
+        const searchResults = document.getElementById('searchResults');
+        const receiverIdInput = document.getElementById('receiver_id');
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                searchResults.innerHTML = '';
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch(`/search-users?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        data.forEach(user => {
+                            const div = document.createElement('div');
+                            div.className = 'search-result-item';
+                            div.textContent = `${user.username} (${user.email})`;
+                            div.onclick = () => selectUser(user);
+                            searchResults.appendChild(div);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }, 300);
+        });
+
+        function selectUser(user) {
+            // Verify user has a valid public key
+            fetch(`/get-user-key?user_id=${user.user_id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Selected user has no valid public key');
+                        return;
+                    }
+                    searchInput.value = `${user.username} (${user.email})`;
+                    receiverIdInput.value = user.user_id;
+                    searchResults.innerHTML = '';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error verifying user key');
+                });
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            if (!receiverIdInput.value) {
+                e.preventDefault();
+                alert('Please select a valid receiver');
+            }
+        });
+
+        // Friend search logic
+        document.getElementById('friendSearch').addEventListener('input', function() {
+            const query = this.value.trim();
+            if (query.length < 2) return;
+
+            fetch(`/search-users?query=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const results = document.getElementById('friendResults');
+                    results.innerHTML = '';
+                    data.forEach(user => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result-item';
+                        div.textContent = `${user.username} (${user.email})`;
+                        const btn = document.createElement('button');
+                        btn.textContent = 'Add Friend';
+                        btn.className = 'btn btn-warning';
+                        btn.onclick = () => addFriend(user.user_id);
+                        div.appendChild(btn);
+                        results.appendChild(div);
+                    });
+                });
+        });
+
+        function addFriend(friendId) {
+            fetch('/add-friend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ friend_id: friendId })
+            })
+            .then(res => res.json())
+            .then(data => alert(data.message || 'Friend request sent'));
+        }
+
+        function loadFriendList() {
+            fetch('/get-friends')
+                .then(res => res.json())
+                .then(friends => {
+                    const list = document.getElementById('friendList');
+                    list.innerHTML = '';
+                    friends.forEach(friend => {
+                        const li = document.createElement('li');
+                        li.textContent = `${friend.username} (${friend.email}) `;
+                        const btn = document.createElement('button');
+                        btn.className = 'btn';
+                        btn.textContent = 'Send File';
+                        btn.onclick = () => {
+                            searchInput.value = `${friend.username} (${friend.email})`;
+                            receiverIdInput.value = friend.user_id;
+                            window.scrollTo(0, 0);
+                        };
+                        li.appendChild(btn);
+                        list.appendChild(li);
+                    });
+                });
+        }
+
+        function loadReceivedFiles() {
+            fetch('/get-received-files')
+                .then(res => res.json())
+                .then(files => {
+                    const list = document.getElementById('receivedFiles');
+                    list.innerHTML = '';
+                    files.forEach(file => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `From: ${file.sender_name} <br> File: ${file.file_name} <br>`;
+                        const btn1 = document.createElement('button');
+                        btn1.className = 'btn';
+                        btn1.textContent = 'Download';
+                        btn1.onclick = () => window.location = `/download-file/${file.file_id}`;
+                        const btn2 = document.createElement('button');
+                        btn2.className = 'btn btn-warning';
+                        btn2.textContent = 'Download & Verify';
+                        btn2.onclick = () => window.location = `/download-decrypt/${file.file_id}`;
+                        li.appendChild(btn1);
+                        li.appendChild(btn2);
+                        list.appendChild(li);
+                    });
+                });
+        }
+
+        // Load friends and received files on page load
+        window.onload = () => {
+            loadFriendList();
+            loadReceivedFiles();
+        }
+    </script>
+</body>
+</html>

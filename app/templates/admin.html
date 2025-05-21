@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - DumpThatFile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="upload-section">
+            <h2>Upload File</h2>
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="form-group">
+                    <label for="receiver">Search Receiver:</label>
+                    <input type="text" id="receiverSearch" placeholder="Search by username or email">
+                    <div id="searchResults" class="search-results"></div>
+                    <input type="hidden" id="receiver_id" name="receiver_id" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="file">Select File (max 5MB):</label>
+                    <input type="file" id="file" name="file" required>
+                </div>
+                
+                <button type="submit" class="btn">Upload and Encrypt</button>
+            </form>
+        </div>
+
+        <div class="user-search-section">
+            <h2>User Management</h2>
+            <input type="text" id="userSearch" placeholder="Search by username or email">
+                <div class="user-table-wrapper">
+                    <table id="userResultsTable">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userResultsBody">
+                            <!-- Rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+        </div>
+    </div>
+
+    <script>
+        let searchTimeout;
+        const searchInput = document.getElementById('receiverSearch');
+        const searchResults = document.getElementById('searchResults');
+        const receiverIdInput = document.getElementById('receiver_id');
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                searchResults.innerHTML = '';
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch(`/search-users?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        data.forEach(user => {
+                            const div = document.createElement('div');
+                            div.className = 'search-result-item';
+                            div.textContent = `${user.username} (${user.email})`;
+                            div.onclick = () => selectUser(user);
+                            searchResults.appendChild(div);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }, 300);
+        });
+
+        function selectUser(user) {
+            // Verify user has a valid public key
+            fetch(`/get-user-key?user_id=${user.user_id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Selected user has no valid public key');
+                        return;
+                    }
+                    searchInput.value = `${user.username} (${user.email})`;
+                    receiverIdInput.value = user.user_id;
+                    searchResults.innerHTML = '';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error verifying user key');
+                });
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            if (!receiverIdInput.value) {
+                e.preventDefault();
+                alert('Please select a valid receiver');
+            }
+        });
+
+        // User search functionality
+        const userSearch = document.getElementById('userSearch');
+        const userResultsBody = document.getElementById('userResultsBody');
+
+        userSearch.addEventListener('input', function() {
+            const query = this.value.trim();
+            if (query.length < 2) {
+                userResultsBody.innerHTML = '';
+                return;
+            }
+
+            fetch(`/search-all-users?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(users => {
+                    userResultsBody.innerHTML = '';
+                    users.forEach(user => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${user.username}</td>
+                            <td>${user.email}</td>
+                            <td>${user.role}</td>
+                            <td>
+                                <button class="btn delegate-btn" onclick="promoteToAdmin(${user.user_id})">
+                                    Delegate as Admin
+                                </button>
+                            </td>
+                        `;
+                        userResultsBody.appendChild(tr);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching users:', error);
+                });
+        });
+
+        function promoteToAdmin(userId) {
+            if (!confirm("Are you sure you want to promote this user to Admin?")) return;
+
+            fetch(`/promote-to-admin`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_id: userId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || "Promotion successful");
+                userSearch.dispatchEvent(new Event('input')); // refresh table
+            })
+            .catch(error => {
+                console.error('Error promoting user:', error);
+                alert("Something went wrong");
+            });
+        }
+
+    </script>
+</body>
+</html>
