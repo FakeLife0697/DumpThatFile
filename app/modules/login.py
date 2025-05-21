@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from app.supabase_client import getPublicClient, getAdminClient
 from app.modules.validation import validate_email
 from functools import wraps
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 login_bp = Blueprint('login', __name__)
 
@@ -18,12 +18,12 @@ def check_session_activity():
     if 'user' in session:
         try:
             last_activity = datetime.fromisoformat(session['user']['last_activity'])
-            if datetime.now(datetime.UTC) - last_activity > timedelta(minutes = 30):
+            if datetime.now(timezone.utc) - last_activity > timedelta(minutes = 30):
                 session.clear()
                 flash('Your session has expired. Please log in again.', 'error')
                 return False
             # Update last activity timestamp
-            session['user']['last_activity'] = datetime.now(datetime.UTC).isoformat()
+            session['user']['last_activity'] = datetime.now(timezone.utc).isoformat()
             return True
         except (ValueError, KeyError):
             session.clear()
@@ -71,7 +71,7 @@ def login():
                     'id': response.user.id,
                     'email': response.user.email,
                     'user_metadata': response.user.user_metadata,
-                    'last_activity': datetime.now(datetime.UTC).isoformat()
+                    'last_activity': datetime.now(timezone.utc).isoformat()
                 }
                 session['access_token'] = response.session.access_token
                 
@@ -81,7 +81,7 @@ def login():
                 return redirect(url_for('home.home'))
                 
         except Exception as e:
-            flash('Invalid email or password', 'error')
+            flash(f'Invalid email or password: {str(e)}', 'error')
             print(e)
             
     return render_template('login.html')

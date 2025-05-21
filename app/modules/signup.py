@@ -129,9 +129,6 @@ def signup():
                 
         except Exception as e:
             # Print detailed error information for debugging
-            print(f"Signup Error: {str(e)}")
-            print("Traceback:")
-            print(traceback.format_exc())
             flash(f'Error creating account: {str(e)}', 'error')
             
     return render_template('signup.html')
