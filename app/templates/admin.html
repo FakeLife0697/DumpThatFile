@@ -16,6 +16,10 @@
             {% endif %}
         {% endwith %}
         
+        <div class="signout-section">
+            <a href="{{ url_for('admin.logout') }}" class="btn btn-signout">Sign Out</a>
+        </div>
+        
         <div class="upload-section">
             <h2>Upload File</h2>
             <form method="POST" enctype="multipart/form-data" id="uploadForm">

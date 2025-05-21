@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from app.supabase_client import getPublicClient, getAdminClient
 from app.modules.encrypt import RSA
+from app.modules.validation import validate_email, validate_username, validate_password
 import traceback
 from supabase.lib.client_options import ClientOptions
 import time
@@ -14,6 +15,22 @@ def signup():
         email = request.form.get('email')
         password = request.form.get('password')
         username = request.form.get('username')
+        
+        # Validate all inputs
+        is_valid_email, email_message = validate_email(email)
+        if not is_valid_email:
+            flash(email_message, 'error')
+            return redirect(request.url)
+            
+        is_valid_username, username_message = validate_username(username)
+        if not is_valid_username:
+            flash(username_message, 'error')
+            return redirect(request.url)
+            
+        is_valid_password, password_message = validate_password(password)
+        if not is_valid_password:
+            flash(password_message, 'error')
+            return redirect(request.url)
         
         try:
             # Configure client

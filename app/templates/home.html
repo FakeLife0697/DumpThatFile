@@ -16,6 +16,10 @@
             {% endif %}
         {% endwith %}
         
+        <div class="signout-section">
+            <a href="{{ url_for('home.logout') }}" class="btn btn-signout">Sign Out</a>
+        </div>
+        
         <div class="key-management-section">
             <h2>Key Management</h2>
             <form method="POST" action="{{ url_for('home.generate_key_pair') }}">

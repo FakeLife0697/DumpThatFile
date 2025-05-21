@@ -175,7 +175,7 @@ class AES(Encryption):
                     fout.write(unpadded_text)
                     
                 final_text = decryptor.finalize()
-                final_unpad = unpadder.upadte(final_text) + unpadder.finalize()
+                final_unpad = unpadder.update(final_text) + unpadder.finalize()
                 fout.write(final_unpad)
         
         except Exception as e:

@@ -3,6 +3,7 @@ from functools import wraps
 from flask_restful import Api
 from app.supabase_client import getPublicClient, getAdminClient
 from app.modules.encrypt import SHA256, AES, RSA
+from app.modules.login import login_required
 import uuid
 import os
 import time
@@ -10,14 +11,6 @@ from requests.exceptions import Timeout, RequestException
 
 home_bp = Blueprint('home', __name__)
 api = Api(home_bp)
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user' not in session:
-            return redirect(url_for('login.login'))
-        return f(*args, **kwargs)
-    return decorated_function
 
 @home_bp.route('/search-users', methods=['GET'])
 @login_required
@@ -172,7 +165,7 @@ def get_my_keys():
     try:
         client = getPublicClient()
         # Get both keys from the secure table
-        result = client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session["user"]["id"]).execute()
+        result = client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session['user']['id']).execute()
         
         if not result.data:
             return jsonify({'error': 'No keys found'}), 404
@@ -230,18 +223,18 @@ def generate_key_pair():
         while retry_count < max_retries:
             try:
                 # First check if user already has keys
-                existing_keys = admin_client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session["user"]["id"]).execute()
+                existing_keys = admin_client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session['user']['id']).execute()
                 
                 if existing_keys.data:
                     # Update existing keys
                     keys_response = admin_client.schema('dtf_secure_info').table('user_keys').update({
                         'public_key': public_key,
                         'private_key': private_key
-                    }).eq('user_id', session["user"]["id"]).execute()
+                    }).eq('user_id', session['user']['id']).execute()
                 else:
                     # Insert new keys
                     keys_response = admin_client.schema('dtf_secure_info').table('user_keys').insert({
-                        'user_id': session["user"]["id"],
+                        'user_id': session['user']['id'],
                         'public_key': public_key,
                         'private_key': private_key
                     }).execute()
@@ -249,7 +242,7 @@ def generate_key_pair():
                 # Update public_key in users table
                 user_response = admin_client.schema('public').table('users').update({
                     'public_key': public_key
-                }).eq('user_id', session["user"]["id"]).execute()
+                }).eq('user_id', session['user']['id']).execute()
                 
                 if not user_response.data:
                     raise Exception('Failed to update user public key')
@@ -274,3 +267,16 @@ def generate_key_pair():
         flash(f'Error generating key pair: {str(e)}', 'error')
         print(e)
         return redirect(url_for('home.home'))
+
+@home_bp.route('/logout', methods=['GET'])
+@login_required
+def logout():
+    try:
+        client = getPublicClient()
+        client.auth.sign_out()
+        session.clear()
+        return redirect(url_for('index.index'))
+    except Exception as e:
+        print(f"Error during logout: {str(e)}")
+        session.clear()
+        return redirect(url_for('index.index'))
