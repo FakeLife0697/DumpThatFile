@@ -148,3 +148,38 @@ input:focus {
 .search-result-item:hover {
     background-color: #eaeaea;
 }
+
+.signout-section {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    justify-content: flex-end;
+}
+
+.btn-admin {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-admin:hover {
+    background-color: #45a049;
+}
+
+.btn-signout {
+    background-color: #f44336;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-signout:hover {
+    background-color: #da190b;
+}

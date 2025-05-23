@@ -7,12 +7,14 @@ from app.modules.login import login_bp
 from app.modules.signup import signup_bp
 from app.modules.home import home_bp
 from app.modules.admin import admin_bp
-
-application = Flask(__name__)
+from app.logger import setup_logger
     
 def create_app():
     application = Flask(__name__)
     application.secret_key = os.urandom(24)
+    
+    logger = setup_logger()
+    application.logger = logger
     
     # Session Security Configurations
     application.config['SESSION_COOKIE_SECURE'] = True  # Only send cookie over HTTPS

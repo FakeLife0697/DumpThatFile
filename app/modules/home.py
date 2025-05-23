@@ -12,7 +12,7 @@ from requests.exceptions import Timeout, RequestException
 home_bp = Blueprint('home', __name__)
 api = Api(home_bp)
 
-@home_bp.route('/search-users', methods=['GET'])
+@home_bp.route('/search-users', methods = ['GET'])
 @login_required
 def search_users():
     query = request.args.get('query', '')
@@ -29,7 +29,7 @@ def search_users():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@home_bp.route('/home', methods=['GET', 'POST'])
+@home_bp.route('/home', methods = ['GET', 'POST'])
 @login_required
 def home():
     if request.method == 'POST':
@@ -139,7 +139,7 @@ def home():
             
     return render_template('home.html')
 
-@home_bp.route('/get-user-key', methods=['GET'])
+@home_bp.route('/get-user-key', methods = ['GET'])
 @login_required
 def get_user_key():
     user_id = request.args.get('user_id')
@@ -159,7 +159,7 @@ def get_user_key():
         print(e)
         return jsonify({'error': str(e)}), 500
 
-@home_bp.route('/get-my-keys', methods=['GET'])
+@home_bp.route('/get-my-keys', methods = ['GET'])
 @login_required
 def get_my_keys():
     try:
@@ -178,7 +178,7 @@ def get_my_keys():
         print(e)
         return jsonify({'error': str(e)}), 500
 
-@home_bp.route('/upload-file', methods=['POST'])
+@home_bp.route('/upload-file', methods = ['POST'])
 @login_required
 def upload_file(receiver_id):
     try:
@@ -207,7 +207,7 @@ def upload_file(receiver_id):
         print(e)
         return redirect(request.url)
 
-@home_bp.route('/generate-key-pair', methods=['POST'])
+@home_bp.route('/generate-key-pair', methods = ['POST'])
 @login_required
 def generate_key_pair():
     try:
@@ -268,7 +268,7 @@ def generate_key_pair():
         print(e)
         return redirect(url_for('home.home'))
 
-@home_bp.route('/logout', methods=['GET'])
+@home_bp.route('/logout', methods = ['GET'])
 @login_required
 def logout():
     try:

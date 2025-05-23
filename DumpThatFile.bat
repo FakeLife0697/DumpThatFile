@@ -16,27 +16,19 @@ if "%1"=="stop" (
     echo Stopping application...
     goto stop
 )
-if "%1"=="restart" (
-    echo Restarting application...
-    goto restart
-)
 
 echo Error: Invalid command
 goto usage
 
 :start_app
-echo In start_app section
-
 echo Building and starting the application...
+docker stop dumpthatfile 2>nul
+docker rm dumpthatfile 2>nul
 docker build -t dumpthatfile .
 if %errorlevel% neq 0 (
     echo Error: Docker build failed
     exit /b 1
 )
-
-:: Stop and remove existing container if it exists
-docker stop dumpthatfile 2>nul
-docker rm dumpthatfile 2>nul
 
 :: Run the container with proper port mapping
 docker run -d -p 5000:5000 --name dumpthatfile dumpthatfile
@@ -60,23 +52,15 @@ docker logs dumpthatfile
 goto :eof
 
 :stop
-echo Stopping and removing container...
 docker stop dumpthatfile 2>nul
 docker rm dumpthatfile 2>nul
 echo Application stopped successfully
 goto :eof
 
-:restart
-echo In restart section
-call :stop
-call :start_app
-goto :eof
-
 :usage
-echo Usage: %0 {start^|stop^|restart^}
+echo Usage: %0 {start^|stop^}
 echo.
 echo Commands:
 echo   start   - Start the application
 echo   stop    - Stop the application
-echo   restart - Restart the application
 exit /b 1

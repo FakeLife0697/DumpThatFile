@@ -11,7 +11,6 @@ public_key: str = data["SUPABASE_PUBLIC_API"]   # Public key
 def getAdminClient() -> Client:
     try:
         adminClient: Client = Client(url, service_key)
-        print("Supabase admin connection established")
         return adminClient
     except Exception as e:
         print(f"Error establishing admin connection: {e}")
@@ -23,7 +22,6 @@ def getPublicClient() -> Client:
             options = ClientOptions(
                 flow_type = "pkce"
             ))
-        print("Supabase public connection established")
         return publicClient
     except Exception as e:
         print(f"Error establishing public connection: {e}")

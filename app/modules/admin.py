@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, flash
-from app.modules.login import is_admin, login_required, check_session_activity
+from app.modules.login import login_required, check_session_activity
 from app.modules.home import login_required
 from app.modules.encrypt import SHA256, AES, RSA
 from app.supabase_client import getPublicClient, getAdminClient
@@ -20,7 +20,7 @@ def admin_required(f):
         if not check_session_activity():
             return redirect(url_for('login.login'))
             
-        if not is_admin(session['user']['id']):
+        if not (session['user']['role'] == 'admin'):
             flash('You do not have permission to access this page.', 'error')
             return redirect(url_for('home.home'))
         return f(*args, **kwargs)
@@ -30,6 +30,7 @@ def admin_required(f):
 @login_required
 @admin_required
 def admin_dashboard():
+    """
     if request.method == 'POST':
         if 'file' not in request.files:
             flash('No file selected', 'error')
@@ -122,7 +123,7 @@ def admin_dashboard():
         except Exception as e:
             flash(f'Error processing file: {str(e)}', 'error')
             return redirect(request.url)
-            
+    """
     return render_template('admin.html')
 
 @admin_bp.route('/logout', methods=['GET'])

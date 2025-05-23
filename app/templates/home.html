@@ -17,6 +17,9 @@
         {% endwith %}
         
         <div class="signout-section">
+            {% if session['user']['role'] == 'admin' %}
+                <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-admin">Admin Page</a>
+            {% endif %}
             <a href="{{ url_for('home.logout') }}" class="btn btn-signout">Sign Out</a>
         </div>
         
