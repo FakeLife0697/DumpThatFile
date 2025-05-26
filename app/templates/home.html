@@ -36,24 +36,41 @@
             <form method="POST" enctype="multipart/form-data" id="uploadForm">
                 <div class="form-group">
                     <label for="receiver">Search Receiver:</label>
-                    <input type="text" id="receiverSearch" placeholder="Search by username or email">
+                    <div class="search-container">
+                        <input type="text" id="receiverSearch" placeholder="Search by username or email">
+                        <button type="button" id="searchButton" class="btn btn-search">Search</button>
+                    </div>
                     <div id="searchResults" class="search-results"></div>
                     <input type="hidden" id="receiver_id" name="receiver_id" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="file">Select File (max 5MB):</label>
-                    <input type="file" id="file" name="file" required>
+                    <input type="file" id="file" name="file" required accept=".txt,.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
+                    <div id="fileInfo" class="file-info"></div>
                 </div>
                 
-                <button type="submit" class="btn">Upload and Encrypt</button>
+                <div id="uploadProgress" class="upload-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">Encrypting and uploading...</div>
+                </div>
+                
+                <button type="submit" class="btn" id="uploadButton">Upload and Encrypt</button>
             </form>
         </div>
 
         <div class="upload-section">
             <h2>Find Users and Add Friends</h2>
-            <input type="text" id="friendSearch" placeholder="Search users to add as friend">
-            <div id="friendResults" class="search-results"></div>
+            <div class="form-group">
+                <label for="friendSearch">Search Users:</label>
+                <div class="search-container">
+                    <input type="text" id="friendSearch" placeholder="Search by username or email">
+                    <button type="button" id="friendSearchButton" class="btn btn-search">Search</button>
+                </div>
+                <div id="friendResults" class="search-results"></div>
+            </div>
         </div>
 
         <div class="upload-section">
@@ -63,40 +80,68 @@
 
         <div class="upload-section">
             <h2>Received Files</h2>
-            <ul id="receivedFiles"></ul>
+            <div class="received-files-container">
+                <table class="files-table">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>From</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receivedFiles"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
         let searchTimeout;
         const searchInput = document.getElementById('receiverSearch');
+        const searchButton = document.getElementById('searchButton');
         const searchResults = document.getElementById('searchResults');
         const receiverIdInput = document.getElementById('receiver_id');
 
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            const query = this.value.trim();
+        function performSearch() {
+            const query = searchInput.value.trim();
             
             if (query.length < 2) {
-                searchResults.innerHTML = '';
+                searchResults.innerHTML = '<div class="search-result-item">Please enter at least 2 characters</div>';
                 return;
             }
             
-            searchTimeout = setTimeout(() => {
-                fetch(`/search-users?query=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        searchResults.innerHTML = '';
-                        data.forEach(user => {
-                            const div = document.createElement('div');
-                            div.className = 'search-result-item';
-                            div.textContent = `${user.username} (${user.email})`;
-                            div.onclick = () => selectUser(user);
-                            searchResults.appendChild(div);
-                        });
-                    })
-                    .catch(error => console.error('Error:', error));
-            }, 300);
+            fetch(`/search-users?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    searchResults.innerHTML = '';
+                    if (data.length === 0) {
+                        searchResults.innerHTML = '<div class="search-result-item">No users found</div>';
+                        return;
+                    }
+                    data.forEach(user => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result-item';
+                        div.textContent = `${user.username} (${user.email})`;
+                        div.onclick = () => selectUser(user);
+                        searchResults.appendChild(div);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    searchResults.innerHTML = '<div class="search-result-item error">Error searching users</div>';
+                });
+        }
+
+        // Search on button click
+        searchButton.addEventListener('click', performSearch);
+
+        // Also allow search on Enter key
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
         });
 
         function selectUser(user) {
@@ -108,7 +153,7 @@
                         alert('Selected user has no valid public key');
                         return;
                     }
-                    searchInput.value = `${user.username} (${user.email})`;
+                    searchInput.value = user.username;  // Only set username
                     receiverIdInput.value = user.user_id;
                     searchResults.innerHTML = '';
                 })
@@ -118,35 +163,120 @@
                 });
         }
 
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
-            if (!receiverIdInput.value) {
-                e.preventDefault();
-                alert('Please select a valid receiver');
+        // File upload handling
+        const fileInput = document.getElementById('file');
+        const fileInfo = document.getElementById('fileInfo');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const uploadButton = document.getElementById('uploadButton');
+
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                // Check file size
+                if (file.size > 5 * 1024 * 1024) {
+                    fileInfo.innerHTML = '<span class="error">File size exceeds 5MB limit</span>';
+                    this.value = '';
+                    return;
+                }
+
+                // Check file type
+                const allowedTypes = [
+                    'text/plain', 'application/pdf', 'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'image/jpeg', 'image/png'
+                ];
+                
+                if (!allowedTypes.includes(file.type)) {
+                    fileInfo.innerHTML = '<span class="error">Invalid file type. Allowed types: TXT, PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</span>';
+                    this.value = '';
+                    return;
+                }
+
+                fileInfo.innerHTML = `<span class="success">Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)</span>`;
             }
         });
 
-        // Friend search logic
-        document.getElementById('friendSearch').addEventListener('input', function() {
-            const query = this.value.trim();
-            if (query.length < 2) return;
+        uploadForm.addEventListener('submit', function(e) {
+            if (!receiverIdInput.value) {
+                e.preventDefault();
+                alert('Please select a valid receiver');
+                return;
+            }
 
+            const file = fileInput.files[0];
+            if (!file) {
+                e.preventDefault();
+                alert('Please select a file');
+                return;
+            }
+
+            // Show loading state
+            uploadProgress.style.display = 'block';
+            uploadButton.disabled = true;
+            uploadButton.textContent = 'Uploading...';
+        });
+
+        // Friend search logic
+        const friendSearchInput = document.getElementById('friendSearch');
+        const friendSearchButton = document.getElementById('friendSearchButton');
+        const friendResults = document.getElementById('friendResults');
+
+        function performFriendSearch() {
+            const query = friendSearchInput.value.trim();
+            console.log('Searching for:', query); // Debug log
+            
+            if (query.length < 2) {
+                friendResults.innerHTML = '<div class="search-result-item">Please enter at least 2 characters</div>';
+                return;
+            }
+            
+            friendResults.innerHTML = '<div class="search-result-item">Searching...</div>'; // Show loading state
+            
             fetch(`/search-users?query=${encodeURIComponent(query)}`)
-                .then(res => res.json())
+                .then(response => {
+                    console.log('Response status:', response.status); // Debug log
+                    return response.json();
+                })
                 .then(data => {
-                    const results = document.getElementById('friendResults');
-                    results.innerHTML = '';
+                    console.log('Search results:', data); // Debug log
+                    friendResults.innerHTML = '';
+                    if (data.error) {
+                        friendResults.innerHTML = `<div class="search-result-item error">${data.error}</div>`;
+                        return;
+                    }
+                    if (data.length === 0) {
+                        friendResults.innerHTML = '<div class="search-result-item">No users found</div>';
+                        return;
+                    }
                     data.forEach(user => {
+                        if (user.user_id === '{{ session["user"]["id"] }}') return; // Skip current user
                         const div = document.createElement('div');
                         div.className = 'search-result-item';
-                        div.textContent = `${user.username} (${user.email})`;
-                        const btn = document.createElement('button');
-                        btn.textContent = 'Add Friend';
-                        btn.className = 'btn btn-warning';
-                        btn.onclick = () => addFriend(user.user_id);
-                        div.appendChild(btn);
-                        results.appendChild(div);
+                        div.innerHTML = `
+                            <span>${user.username} (${user.email})</span>
+                            <button class="btn btn-warning" onclick="addFriend('${user.user_id}')">Add Friend</button>
+                        `;
+                        friendResults.appendChild(div);
                     });
+                })
+                .catch(error => {
+                    console.error('Search error:', error); // Debug log
+                    friendResults.innerHTML = '<div class="search-result-item error">Error searching users</div>';
                 });
+        }
+
+        // Search on button click
+        friendSearchButton.addEventListener('click', performFriendSearch);
+
+        // Also allow search on Enter key
+        friendSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performFriendSearch();
+            }
         });
 
         function addFriend(friendId) {
@@ -155,54 +285,136 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ friend_id: friendId })
             })
-            .then(res => res.json())
-            .then(data => alert(data.message || 'Friend request sent'));
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert(data.message);
+                    loadFriendList(); // Refresh friend list
+                    document.getElementById('friendSearch').value = ''; // Clear search
+                    document.getElementById('friendResults').innerHTML = ''; // Clear results
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error adding friend');
+            });
         }
 
         function loadFriendList() {
+            console.log('Loading friend list...'); // Debug log
             fetch('/get-friends')
-                .then(res => res.json())
+                .then(response => {
+                    console.log('Friend list response status:', response.status); // Debug log
+                    return response.json();
+                })
                 .then(friends => {
+                    console.log('Friend list data:', friends); // Debug log
                     const list = document.getElementById('friendList');
                     list.innerHTML = '';
+                    
+                    // Handle empty friend list gracefully
+                    if (!Array.isArray(friends)) {
+                        console.error('Invalid friends data:', friends); // Debug log
+                        list.innerHTML = '<li class="no-friends">Error loading friend list. Please try again later.</li>';
+                        return;
+                    }
+                    
+                    if (friends.length === 0) {
+                        list.innerHTML = '<li class="no-friends">No friends yet. Search for users above to add friends!</li>';
+                        return;
+                    }
+                    
                     friends.forEach(friend => {
+                        if (!friend || !friend.user_id || !friend.username || !friend.email) {
+                            console.error('Invalid friend data:', friend); // Debug log
+                            return;
+                        }
                         const li = document.createElement('li');
-                        li.textContent = `${friend.username} (${friend.email}) `;
-                        const btn = document.createElement('button');
-                        btn.className = 'btn';
-                        btn.textContent = 'Send File';
-                        btn.onclick = () => {
-                            searchInput.value = `${friend.username} (${friend.email})`;
-                            receiverIdInput.value = friend.user_id;
-                            window.scrollTo(0, 0);
-                        };
-                        li.appendChild(btn);
+                        li.className = 'friend-item';
+                        li.innerHTML = `
+                            <span>${friend.username} (${friend.email})</span>
+                            <button class="btn" onclick="selectFriend('${friend.user_id}', '${friend.username}', '${friend.email}')">Send File</button>
+                        `;
                         list.appendChild(li);
                     });
+                })
+                .catch(error => {
+                    console.error('Error loading friend list:', error); // Debug log
+                    const list = document.getElementById('friendList');
+                    list.innerHTML = '<li class="no-friends">Unable to load friend list. Please try again later.</li>';
                 });
         }
 
+        function selectFriend(userId, username, email) {
+            document.getElementById('receiverSearch').value = `${username} (${email})`;
+            document.getElementById('receiver_id').value = userId;
+            window.scrollTo(0, 0); // Scroll to upload section
+        }
+
+        // Load friend list when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFriendList();
+        });
+
         function loadReceivedFiles() {
             fetch('/get-received-files')
-                .then(res => res.json())
+                .then(response => response.json())
                 .then(files => {
-                    const list = document.getElementById('receivedFiles');
-                    list.innerHTML = '';
+                    const tbody = document.getElementById('receivedFiles');
+                    tbody.innerHTML = '';
                     files.forEach(file => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `From: ${file.sender_name} <br> File: ${file.file_name} <br>`;
-                        const btn1 = document.createElement('button');
-                        btn1.className = 'btn';
-                        btn1.textContent = 'Download';
-                        btn1.onclick = () => window.location = `/download-file/${file.file_id}`;
-                        const btn2 = document.createElement('button');
-                        btn2.className = 'btn btn-warning';
-                        btn2.textContent = 'Download & Verify';
-                        btn2.onclick = () => window.location = `/download-decrypt/${file.file_id}`;
-                        li.appendChild(btn1);
-                        li.appendChild(btn2);
-                        list.appendChild(li);
+                        const tr = document.createElement('tr');
+                        
+                        // File name cell
+                        const tdName = document.createElement('td');
+                        tdName.textContent = file.file_name;
+                        tr.appendChild(tdName);
+                        
+                        // Sender cell
+                        const tdSender = document.createElement('td');
+                        tdSender.textContent = file.sender?.username || 'Unknown';
+                        tr.appendChild(tdSender);
+                        
+                        // Date cell
+                        const tdDate = document.createElement('td');
+                        tdDate.textContent = new Date(file.creating_date).toLocaleString();
+                        tr.appendChild(tdDate);
+                        
+                        // Actions cell
+                        const tdActions = document.createElement('td');
+                        tdActions.className = 'action-buttons';
+                        
+                        // Download encrypted button
+                        const btnEncrypted = document.createElement('button');
+                        btnEncrypted.className = 'btn btn-secondary';
+                        btnEncrypted.textContent = 'Download Encrypted';
+                        btnEncrypted.onclick = () => window.location = `/download-encrypted/${file.file_id}`;
+                        tdActions.appendChild(btnEncrypted);
+                        
+                        // Download decrypted button
+                        const btnDecrypted = document.createElement('button');
+                        btnDecrypted.className = 'btn';
+                        btnDecrypted.textContent = 'Download Decrypted';
+                        btnDecrypted.onclick = () => window.location = `/download-decrypted/${file.file_id}`;
+                        tdActions.appendChild(btnDecrypted);
+                        
+                        // Verify and download button
+                        const btnVerify = document.createElement('button');
+                        btnVerify.className = 'btn btn-warning';
+                        btnVerify.textContent = 'Verify & Download';
+                        btnVerify.onclick = () => window.location = `/download-verify/${file.file_id}`;
+                        tdActions.appendChild(btnVerify);
+                        
+                        tr.appendChild(tdActions);
+                        tbody.appendChild(tr);
                     });
+                })
+                .catch(error => {
+                    console.error('Error loading files:', error);
+                    const tbody = document.getElementById('receivedFiles');
+                    tbody.innerHTML = '<tr><td colspan="4" class="error-message">Error loading files</td></tr>';
                 });
         }
 

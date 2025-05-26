@@ -46,7 +46,7 @@ class RSA(Encryption):
             
         return private_key, public_key
             
-    def encrypt_rsa(self, aes_key: str, public_key = None):
+    def encrypt(self, aes_key: str, public_key = None):
         cipher_aes_key = None
         try:
             if public_key:
@@ -74,7 +74,7 @@ class RSA(Encryption):
 
         return cipher_aes_key
 
-    def decrypt_rsa(self, cipher_aes_key: str, private_key = None):
+    def decrypt(self, cipher_aes_key: str, private_key = None):
         decrypted_key = None
         try:
             if private_key:
@@ -191,6 +191,7 @@ class SHA256(Encryption):
         self.chunk_size = 64*1024 # (64KB)
         
     def hash(self, file = None):
+        digest = None
         try:
             hash_obj = hashes.Hash(hashes.SHA256(), backend = default_backend())
             with open(file, 'rb') as fin:

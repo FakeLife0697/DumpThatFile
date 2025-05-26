@@ -41,3 +41,8 @@ EXPOSE 5000
 
 # Command to run the application
 CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5000"]
+
+# FLASK_ENV=production
+# ENV FLASK_DEBUG=0
+# EXPOSE 3000
+# CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=3000"]

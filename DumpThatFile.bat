@@ -22,8 +22,8 @@ goto usage
 
 :start_app
 echo Building and starting the application...
-docker stop dumpthatfile 2>nul
-docker rm dumpthatfile 2>nul
+docker stop dumpthatfile 2>&1
+docker rm dumpthatfile 2>&1
 docker build -t dumpthatfile .
 if %errorlevel% neq 0 (
     echo Error: Docker build failed
@@ -32,6 +32,8 @@ if %errorlevel% neq 0 (
 
 :: Run the container with proper port mapping
 docker run -d -p 5000:5000 --name dumpthatfile dumpthatfile
+:: docker run -d -p 3000:3000 --name dumpthatfile dumpthatfile
+
 if %errorlevel% neq 0 (
     echo Error: Docker run failed
     exit /b 1
@@ -52,8 +54,8 @@ docker logs dumpthatfile
 goto :eof
 
 :stop
-docker stop dumpthatfile 2>nul
-docker rm dumpthatfile 2>nul
+docker stop dumpthatfile 2>&1
+docker rm dumpthatfile 2>&1
 echo Application stopped successfully
 goto :eof
 

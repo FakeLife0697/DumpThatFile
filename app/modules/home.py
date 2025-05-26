@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, flash
+from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, flash, send_file
 from functools import wraps
 from flask_restful import Api
 from app.supabase_client import getPublicClient, getAdminClient
@@ -8,26 +8,23 @@ import uuid
 import os
 import time
 from requests.exceptions import Timeout, RequestException
+import io
 
 home_bp = Blueprint('home', __name__)
 api = Api(home_bp)
 
-@home_bp.route('/search-users', methods = ['GET'])
+@home_bp.route('/logout', methods = ['GET'])
 @login_required
-def search_users():
-    query = request.args.get('query', '')
-    if not query:
-        return jsonify([])
-    
+def logout():
     try:
         client = getPublicClient()
-        # Search users by username or email
-        result = client.table('users').select('user_id, username, email').or_(
-            f'username.ilike.%{query}%,email.ilike.%{query}%'
-        ).execute()
-        return jsonify(result.data)
+        client.auth.sign_out()
+        session.clear()
+        return redirect(url_for('index.index'))
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error during logout: {str(e)}")
+        session.clear()
+        return redirect(url_for('index.index'))
 
 @home_bp.route('/home', methods = ['GET', 'POST'])
 @login_required
@@ -59,10 +56,11 @@ def home():
         try:
             # First check if they are friends
             client = getPublicClient()
+            print(f"Checking friendship between user {session['user']['id']} and receiver {receiver_id}")  # Debug log
+            
+            # Query both directions of friendship
             friends_result = client.table('friends').select('*').or_(
-                f'user_id.eq.{session["user"]["id"]},friend_id.eq.{session["user"]["id"]}'
-            ).and_(
-                f'user_id.eq.{receiver_id},friend_id.eq.{receiver_id}'
+                f'user_id.eq.{session["user"]["id"]},friend_id.eq.{receiver_id},user_id.eq.{receiver_id},friend_id.eq.{session["user"]["id"]}'
             ).execute()
             
             if not friends_result.data:
@@ -112,22 +110,22 @@ def home():
             )
             
             # Create signature record
-            admin_client = getAdminClient()
-            admin_client.table('signatures').insert({
+            client.table('signatures').insert({
                 'sign_id': sign_id,
                 'sign_path': signature_path,
                 'creating_date': 'now()'
             }).execute()
             
             # Create file record
-            admin_client.table('files').insert({
+            client.table('files').insert({
                 'file_id': file_id,
                 'file_name': file.filename,
                 'file_path': file_path,
                 'aes_key': encrypted_aes_key,
                 'file_format': file.filename.split('.')[-1],
                 'sign_id': sign_id,
-                'receiver': receiver_id
+                'receiver': receiver_id,
+                'sender': session['user']['id']
             }).execute()
             
             flash('File uploaded and encrypted successfully!', 'success')
@@ -138,6 +136,35 @@ def home():
             return redirect(request.url)
             
     return render_template('home.html')
+
+@home_bp.route('/search-users', methods = ['GET'])
+@login_required
+def search_users():
+    query = request.args.get('query', '')
+    if not query:
+        return jsonify([])
+    
+    try:
+        client = getPublicClient()
+        if not client:
+            print("Failed to get Supabase client")
+            return jsonify({'error': 'Database connection error'}), 500
+            
+        print(f"Searching for query: {query}")  # Debug log
+        
+        # Search users by username or email
+        result = client.table('users').select('user_id, username, email').or_(
+            f'username.ilike.%{query}%,email.ilike.%{query}%'
+        ).execute()
+        
+        print(f"Search results: {result.data}")  # Debug log
+        
+        # Filter out current user from results
+        filtered_data = [user for user in result.data if user['user_id'] != session['user']['id']]
+        return jsonify(filtered_data)
+    except Exception as e:
+        print(f"Search error: {str(e)}")  # Debug log
+        return jsonify({'error': str(e)}), 500
 
 @home_bp.route('/get-user-key', methods = ['GET'])
 @login_required
@@ -163,7 +190,7 @@ def get_user_key():
 @login_required
 def get_my_keys():
     try:
-        client = getPublicClient()
+        client = getAdminClient()
         # Get both keys from the secure table
         result = client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session['user']['id']).execute()
         
@@ -184,10 +211,8 @@ def upload_file(receiver_id):
     try:
         # First check if they are friends
         client = getPublicClient()
-        friends_result = client.schema('public').table('friends').select('*').or_(
-            f'user_id.eq.{session["user"]["id"]},friend_id.eq.{session["user"]["id"]}'
-        ).and_(
-            f'user_id.eq.{receiver_id},friend_id.eq.{receiver_id}'
+        friends_result = client.table('friends').select('*').or_(
+            f'(user_id.eq.{session["user"]["id"]},friend_id.eq.{receiver_id}),(user_id.eq.{receiver_id},friend_id.eq.{session["user"]["id"]})'
         ).execute()
         
         if not friends_result.data:
@@ -268,15 +293,246 @@ def generate_key_pair():
         print(e)
         return redirect(url_for('home.home'))
 
-@home_bp.route('/logout', methods = ['GET'])
+@home_bp.route('/get-received-files', methods=['GET'])
 @login_required
-def logout():
+def get_received_files():
     try:
         client = getPublicClient()
-        client.auth.sign_out()
-        session.clear()
-        return redirect(url_for('index.index'))
+        # Get files where user is the receiver, including sender's username
+        result = client.table('files').select(
+            'file_id, file_name, creating_date, sender:users!files_sender_fkey(username)'
+        ).eq('receiver', session['user']['id']).execute()
+        
+        # Transform the result to make it easier to use in the frontend
+        files = []
+        for file in result.data:
+            files.append({
+                'file_id': file['file_id'],
+                'file_name': file['file_name'],
+                'creating_date': file['creating_date'],
+                'sender_name': file['sender']['username'] if file['sender'] else 'Unknown'
+            })
+        
+        return jsonify(files)
     except Exception as e:
-        print(f"Error during logout: {str(e)}")
-        session.clear()
-        return redirect(url_for('index.index'))
+        print(e)
+        return jsonify({'error': str(e)}), 500
+
+@home_bp.route('/download-encrypted/<file_id>', methods=['GET'])
+@login_required
+def download_encrypted(file_id):
+    try:
+        client = getPublicClient()
+        # Get file info
+        file_result = client.table('files').select('*').eq('file_id', file_id).eq('receiver', session['user']['id']).execute()
+        
+        if not file_result.data:
+            flash('File not found or access denied', 'error')
+            return redirect(url_for('home.home'))
+            
+        file_info = file_result.data[0]
+        
+        # Download encrypted file from storage
+        encrypted_file = client.storage.from_('encrypted-files').download(file_info['file_path'])
+        
+        return send_file(
+            io.BytesIO(encrypted_file),
+            mimetype = 'application/octet-stream',
+            as_attachment = True,
+            download_name = f"encrypted_{file_info['file_name']}"
+        )
+    except Exception as e:
+        flash(f'Error downloading file: {str(e)}', 'error')
+        return redirect(url_for('home.home'))
+
+@home_bp.route('/download-decrypted/<file_id>', methods=['GET'])
+@login_required
+def download_decrypted(file_id):
+    try:
+        client = getPublicClient()
+        # Get file info
+        file_result = client.table('files').select('*').eq('file_id', file_id).eq('receiver', session['user']['id']).execute()
+        
+        if not file_result.data:
+            flash('File not found or access denied', 'error')
+            return redirect(url_for('home.home'))
+            
+        file_info = file_result.data[0]
+        
+        # Get user's private key
+        key_result = client.schema('dtf_secure_info').table('user_keys').select('private_key').eq('user_id', session['user']['id']).execute()
+        
+        if not key_result.data:
+            flash('Private key not found', 'error')
+            return redirect(url_for('home.home'))
+            
+        private_key = key_result.data[0]['private_key']
+        
+        # Download encrypted file
+        encrypted_file = client.storage.from_('encrypted-files').download(file_info['file_path'])
+        
+        # Decrypt AES key with private key
+        rsa = RSA()
+        aes_key = rsa.decrypt(file_info['aes_key'], private_key)
+        
+        # Decrypt file with AES
+        aes = AES()
+        decrypted_file = aes.decrypt(encrypted_file, aes_key)
+        
+        return send_file(
+            io.BytesIO(decrypted_file),
+            mimetype = 'application/octet-stream',
+            as_attachment = True,
+            download_name = file_info['file_name']
+        )
+    except Exception as e:
+        flash(f'Error decrypting file: {str(e)}', 'error')
+        return redirect(url_for('home.home'))
+
+@home_bp.route('/download-verify/<file_id>', methods=['GET'])
+@login_required
+def download_verify(file_id):
+    try:
+        client = getPublicClient()
+        # Get file info
+        file_result = client.table('files').select('*').eq('file_id', file_id).eq('receiver', session['user']['id']).execute()
+        
+        if not file_result.data:
+            flash('File not found or access denied', 'error')
+            return redirect(url_for('home.home'))
+            
+        file_info = file_result.data[0]
+        
+        # Get signature
+        signature_result = client.table('signatures').select('*').eq('sign_id', file_info['sign_id']).execute()
+        
+        if not signature_result.data:
+            flash('Signature not found', 'error')
+            return redirect(url_for('home.home'))
+            
+        signature_info = signature_result.data[0]
+        
+        # Download encrypted file and signature
+        encrypted_file = client.storage.from_('encrypted-files').download(file_info['file_path'])
+        signature = client.storage.from_('signature-files').download(signature_info['sign_path'])
+        
+        # Get user's private key
+        private_client = getAdminClient()
+        key_result = private_client.schema('dtf_secure_info').table('user_keys').select('private_key').eq('user_id', session['user']['id']).execute()
+        
+        if not key_result.data:
+            flash('Private key not found', 'error')
+            return redirect(url_for('home.home'))
+            
+        private_key = key_result.data[0]['private_key']
+        
+        # Decrypt AES key with private key
+        rsa = RSA()
+        aes_key = rsa.decrypt(file_info['aes_key'], private_key)
+        
+        # Decrypt file with AES
+        aes = AES()
+        decrypted_file = aes.decrypt(encrypted_file, aes_key)
+        
+        # Verify signature
+        sha256 = SHA256()
+        calculated_hash = sha256.hash(decrypted_file)
+        
+        if calculated_hash != signature:
+            flash('File integrity verification failed!', 'error')
+            return redirect(url_for('home.home'))
+        
+        flash('File integrity verified successfully!', 'success')
+        return send_file(
+            io.BytesIO(decrypted_file),
+            mimetype = 'application/octet-stream',
+            as_attachment = True,
+            download_name = file_info['file_name']
+        )
+    except Exception as e:
+        flash(f'Error processing file: {str(e)}', 'error')
+        return redirect(url_for('home.home'))
+
+@home_bp.route('/add-friend', methods=['POST'])
+@login_required
+def add_friend():
+    try:
+        data = request.get_json()
+        friend_id = data.get('friend_id')
+        
+        if not friend_id:
+            return jsonify({'error': 'No friend ID provided'}), 400
+            
+        if friend_id == session['user']['id']:
+            return jsonify({'error': 'Cannot add yourself as a friend'}), 400
+            
+        # Use admin client to bypass RLS for checking existing friendships
+        admin_client = getAdminClient()
+        if not admin_client:
+            return jsonify({'error': 'Database connection error'}), 500
+            
+        # Check if friendship already exists in either direction
+        existing_friendship = admin_client.table('friends').select('*').or_(
+            f'user_id.eq.{session["user"]["id"]},friend_id.eq.{friend_id},user_id.eq.{friend_id},friend_id.eq.{session["user"]["id"]}'
+        ).execute()
+        
+        if existing_friendship.data:
+            return jsonify({'error': 'Friendship already exists'}), 400
+            
+        # Add new friendship
+        result = admin_client.table('friends').insert({
+            'user_id': session['user']['id'],
+            'friend_id': friend_id
+        }).execute()
+        
+        if not result.data:
+            return jsonify({'error': 'Failed to add friend'}), 500
+            
+        return jsonify({'message': 'Friend added successfully'})
+        
+    except Exception as e:
+        print(f"Error adding friend: {str(e)}")  # Add logging
+        return jsonify({'error': str(e)}), 500
+
+@home_bp.route('/get-friends', methods=['GET'])
+@login_required
+def get_friends():
+    try:
+        client = getPublicClient()
+        print(f"Getting friends for user {session['user']['id']}")  # Debug log
+        
+        # First, get all friendships where user is either user_id or friend_id
+        result = client.table('friends').select(
+            'user_id, friend_id'
+        ).or_(
+            f'user_id.eq.{session["user"]["id"]},friend_id.eq.{session["user"]["id"]}'
+        ).execute()
+        
+        print(f"Raw friendship data: {result.data}")  # Debug log
+        
+        if not result.data:
+            return jsonify([])
+        
+        friends = []
+        for friendship in result.data:
+            # Determine which ID is the friend's ID
+            friend_id = friendship['friend_id'] if friendship['user_id'] == session['user']['id'] else friendship['user_id']
+            
+            # Get friend's user info
+            user_result = client.table('users').select('username, email').eq('user_id', friend_id).execute()
+            print(f"User data for {friend_id}: {user_result.data}")  # Debug log
+            
+            if user_result.data:
+                friend_info = user_result.data[0]
+                friends.append({
+                    'user_id': friend_id,
+                    'username': friend_info['username'],
+                    'email': friend_info['email']
+                })
+        
+        print(f"Final friends list: {friends}")  # Debug log
+        return jsonify(friends)
+        
+    except Exception as e:
+        print(f"Error getting friends: {str(e)}")  # Debug log
+        return jsonify([])  # Return empty array on error

@@ -2,10 +2,6 @@ import re
 from typing import Tuple
 
 def validate_email(email: str) -> Tuple[bool, str]:
-    """
-    Validate email format using regex
-    Returns: (is_valid, message)
-    """
     # RFC 5322 compliant email regex
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     
@@ -18,13 +14,6 @@ def validate_email(email: str) -> Tuple[bool, str]:
     return True, "Valid email"
 
 def validate_username(username: str) -> Tuple[bool, str]:
-    """
-    Validate username:
-    - Length between 5 and 20 characters
-    - No spaces or special characters
-    - Only letters, numbers, and underscores
-    Returns: (is_valid, message)
-    """
     if not username:
         return False, "Username is required"
     
@@ -39,11 +28,6 @@ def validate_username(username: str) -> Tuple[bool, str]:
     return True, "Valid username"
 
 def validate_password(password: str) -> Tuple[bool, str]:
-    """
-    Validate password:
-    - Length between 6 and 20 characters
-    Returns: (is_valid, message)
-    """
     if not password:
         return False, "Password is required"
     

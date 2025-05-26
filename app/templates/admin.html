@@ -20,163 +20,240 @@
             <a href="{{ url_for('home.home') }}" class="btn btn-home">Home Page</a>
             <a href="{{ url_for('admin.logout') }}" class="btn btn-signout">Sign Out</a>
         </div>
-        
-        <!--
-        <div class="upload-section">
-            <h2>Upload File</h2>
-            <form method="POST" enctype="multipart/form-data" id="uploadForm">
-                <div class="form-group">
-                    <label for="receiver">Search Receiver:</label>
-                    <input type="text" id="receiverSearch" placeholder="Search by username or email">
-                    <div id="searchResults" class="search-results"></div>
-                    <input type="hidden" id="receiver_id" name="receiver_id" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="file">Select File (max 5MB):</label>
-                    <input type="file" id="file" name="file" required>
-                </div>
-                
-                <button type="submit" class="btn">Upload and Encrypt</button>
-            </form>
-        </div>
-        -->
 
-        <div class="user-search-section">
-            <h2>User Management</h2>
-            <input type="text" id="userSearch" placeholder="Search by username or email">
-                <div class="user-table-wrapper">
-                    <table id="userResultsTable">
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="userResultsBody">
-                            <!-- Rows will be inserted here -->
-                        </tbody>
-                    </table>
-                </div>
+        <div class="admin-section">
+            <h2>Users</h2>
+            <div class="table-container">
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Public Key</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h2>Files</h2>
+            <div class="table-container">
+                <table id="filesTable">
+                    <thead>
+                        <tr>
+                            <th>File ID</th>
+                            <th>File Name</th>
+                            <th>Sender</th>
+                            <th>Receiver</th>
+                            <th>Created Date</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h2>Friendships</h2>
+            <div class="table-container">
+                <table id="friendsTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Friend</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h2>Signatures</h2>
+            <div class="table-container">
+                <table id="signaturesTable">
+                    <thead>
+                        <tr>
+                            <th>Signature ID</th>
+                            <th>Path</th>
+                            <th>Created Date</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h2>User Roles</h2>
+            <div class="table-container">
+                <table id="rolesTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h2>User Keys</h2>
+            <div class="table-container">
+                <table id="keysTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Public Key</th>
+                            <th>Private Key</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        let searchTimeout;
-        const searchInput = document.getElementById('receiverSearch');
-        const searchResults = document.getElementById('searchResults');
-        const receiverIdInput = document.getElementById('receiver_id');
-
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            const query = this.value.trim();
-            
-            if (query.length < 2) {
-                searchResults.innerHTML = '';
-                return;
-            }
-            
-            searchTimeout = setTimeout(() => {
-                fetch(`/search-users?query=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        searchResults.innerHTML = '';
-                        data.forEach(user => {
-                            const div = document.createElement('div');
-                            div.className = 'search-result-item';
-                            div.textContent = `${user.username} (${user.email})`;
-                            div.onclick = () => selectUser(user);
-                            searchResults.appendChild(div);
-                        });
-                    })
-                    .catch(error => console.error('Error:', error));
-            }, 300);
-        });
-
-        function selectUser(user) {
-            // Verify user has a valid public key
-            fetch(`/get-user-key?user_id=${user.user_id}`)
+        // Function to load users
+        function loadUsers() {
+            fetch('/admin/users')
                 .then(response => response.json())
                 .then(data => {
-                    if (data.error) {
-                        alert('Selected user has no valid public key');
-                        return;
-                    }
-                    searchInput.value = `${user.username} (${user.email})`;
-                    receiverIdInput.value = user.user_id;
-                    searchResults.innerHTML = '';
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error verifying user key');
-                });
-        }
-
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
-            if (!receiverIdInput.value) {
-                e.preventDefault();
-                alert('Please select a valid receiver');
-            }
-        });
-
-        // User search functionality
-        const userSearch = document.getElementById('userSearch');
-        const userResultsBody = document.getElementById('userResultsBody');
-
-        userSearch.addEventListener('input', function() {
-            const query = this.value.trim();
-            if (query.length < 2) {
-                userResultsBody.innerHTML = '';
-                return;
-            }
-
-            fetch(`/search-all-users?query=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(users => {
-                    userResultsBody.innerHTML = '';
-                    users.forEach(user => {
+                    const tbody = document.querySelector('#usersTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(user => {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
+                            <td>${user.user_id}</td>
                             <td>${user.username}</td>
                             <td>${user.email}</td>
-                            <td>${user.role}</td>
-                            <td>
-                                <button class="btn delegate-btn" onclick="promoteToAdmin(${user.user_id})">
-                                    Delegate as Admin
-                                </button>
-                            </td>
+                            <td>${user.public_key || 'Not set'}</td>
                         `;
-                        userResultsBody.appendChild(tr);
+                        tbody.appendChild(tr);
                     });
                 })
-                .catch(error => {
-                    console.error('Error fetching users:', error);
-                });
-        });
-
-        function promoteToAdmin(userId) {
-            if (!confirm("Are you sure you want to promote this user to Admin?")) return;
-
-            fetch(`/promote-to-admin`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ user_id: userId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message || "Promotion successful");
-                userSearch.dispatchEvent(new Event('input')); // refresh table
-            })
-            .catch(error => {
-                console.error('Error promoting user:', error);
-                alert("Something went wrong");
-            });
+                .catch(error => console.error('Error loading users:', error));
         }
 
+        // Function to load files
+        function loadFiles() {
+            fetch('/admin/files')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#filesTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(file => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${file.file_id}</td>
+                            <td>${file.file_name}</td>
+                            <td>${file.sender?.username || 'Unknown'}</td>
+                            <td>${file.receiver?.username || 'Unknown'}</td>
+                            <td>${new Date(file.creating_date).toLocaleString()}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading files:', error));
+        }
+
+        // Function to load friends
+        function loadFriends() {
+            fetch('/admin/friends')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#friendsTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(friendship => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${friendship.users?.username || 'Unknown'}</td>
+                            <td>${friendship.users_1?.username || 'Unknown'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading friends:', error));
+        }
+
+        // Function to load signatures
+        function loadSignatures() {
+            fetch('/admin/signatures')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#signaturesTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(signature => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${signature.sign_id}</td>
+                            <td>${signature.sign_path}</td>
+                            <td>${new Date(signature.creating_date).toLocaleString()}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading signatures:', error));
+        }
+
+        // Function to load roles
+        function loadRoles() {
+            fetch('/admin/roles')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#rolesTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(role => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${role.users?.username || 'Unknown'}</td>
+                            <td>${role.users?.email || 'Unknown'}</td>
+                            <td>${role.role}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading roles:', error));
+        }
+
+        // Function to load keys
+        function loadKeys() {
+            fetch('/admin/keys')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#keysTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(key => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${key.users?.username || 'Unknown'}</td>
+                            <td>${key.users?.email || 'Unknown'}</td>
+                            <td>${key.public_key}</td>
+                            <td>${key.private_key}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading keys:', error));
+        }
+
+        // Load all data when page loads
+        window.onload = function() {
+            loadUsers();
+            loadFiles();
+            loadFriends();
+            loadSignatures();
+            loadRoles();
+            loadKeys();
+        };
     </script>
 </body>
 </html>

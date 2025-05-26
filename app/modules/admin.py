@@ -26,106 +26,6 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@admin_bp.route('/admin', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def admin_dashboard():
-    """
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            flash('No file selected', 'error')
-            return redirect(request.url)
-        
-        receiver_id = request.form.get('receiver_id')
-        if not receiver_id:
-            flash('No receiver selected', 'error')
-            return redirect(request.url)
-        
-        file = request.files['file']
-        if file.filename == '':
-            flash('No file selected', 'error')
-            return redirect(request.url)
-        
-        # Check file size (5MB limit)
-        file.seek(0, os.SEEK_END)
-        size = file.tell()
-        file.seek(0)
-        
-        if size > 5 * 1024 * 1024:  # 5MB in bytes
-            flash('File size exceeds 5MB limit', 'error')
-            return redirect(request.url)
-        
-        try:
-            # Get receiver's public key
-            client = getPublicClient()
-            key_result = client.table('user_public_keys').select('public_key').eq('user_id', receiver_id).execute()
-            
-            if not key_result.data:
-                flash('Receiver has no valid public key', 'error')
-                return redirect(request.url)
-            
-            receiver_public_key = key_result.data[0]['public_key']
-            
-            # Generate unique IDs
-            file_id = str(uuid.uuid4())
-            sign_id = str(uuid.uuid4())
-            
-            # Create signature
-            sha256 = SHA256()
-            signature = sha256.hash(file.read())
-            file.seek(0)  # Reset file pointer
-            
-            # Generate and encrypt with AES
-            aes = AES()
-            aes_key = aes.generate_key()
-            encrypted_file = aes.encrypt(file.read())
-            file.seek(0)  # Reset file pointer
-            
-            # Encrypt AES key with receiver's public key
-            rsa = RSA()
-            encrypted_aes_key = rsa.encrypt(aes_key, receiver_public_key)
-            
-            # Upload signature file to Supabase storage
-            signature_path = f"signature-files/{sign_id}/{file.filename}.sig"
-            client.storage.from_('signature-files').upload(
-                signature_path,
-                signature
-            )
-            
-            # Upload encrypted file to Supabase storage
-            file_path = f"encrypted-files/{file_id}/{file.filename}"
-            client.storage.from_('encrypted-files').upload(
-                file_path,
-                encrypted_file
-            )
-            
-            # Create signature record
-            admin_client = getAdminClient()
-            admin_client.table('signatures').insert({
-                'sign_id': sign_id,
-                'sign_path': signature_path,
-                'creating_date': 'now()'
-            }).execute()
-            
-            # Create file record
-            admin_client.table('files').insert({
-                'file_id': file_id,
-                'file_name': file.filename,
-                'file_path': file_path,
-                'aes_key': encrypted_aes_key,
-                'file_format': file.filename.split('.')[-1],
-                'sign_id': sign_id,
-                'receiver': receiver_id
-            }).execute()
-            
-            flash('File uploaded and encrypted successfully!', 'success')
-            
-        except Exception as e:
-            flash(f'Error processing file: {str(e)}', 'error')
-            return redirect(request.url)
-    """
-    return render_template('admin.html')
-
 @admin_bp.route('/logout', methods=['GET'])
 @login_required
 def logout():
@@ -138,3 +38,76 @@ def logout():
         print(f"Error during logout: {str(e)}")
         session.clear()
         return redirect(url_for('index.index'))
+
+@admin_bp.route('/admin', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_dashboard():
+    return render_template('admin.html')
+
+@admin_bp.route('/admin/users', methods=['GET'])
+@login_required
+@admin_required
+def get_users():
+    try:
+        client = getAdminClient()
+        result = client.schema('public').table('users').select('*').execute()
+        return jsonify(result.data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin_bp.route('/admin/files', methods=['GET'])
+@login_required
+@admin_required
+def get_files():
+    try:
+        client = getAdminClient()
+        result = client.schema('public').table('files').select('*').execute()
+        return jsonify(result.data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin_bp.route('/admin/friends', methods=['GET'])
+@login_required
+@admin_required
+def get_friends():
+    try:
+        client = getAdminClient()
+        result = client.schema('public').table('friends').select('*').execute()
+        return jsonify(result.data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin_bp.route('/admin/signatures', methods=['GET'])
+@login_required
+@admin_required
+def get_signatures():
+    try:
+        client = getAdminClient()
+        result = client.schema('public').table('signatures').select('*').execute()
+        return jsonify(result.data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin_bp.route('/admin/roles', methods=['GET'])
+@login_required
+@admin_required
+def get_roles():
+    try:
+        client = getAdminClient()
+        result = client.schema('dtf_secure_info').table('roles').select('*').execute()
+        return jsonify(result.data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin_bp.route('/admin/keys', methods=['GET'])
+@login_required
+@admin_required
+def get_keys():
+    try:
+        client = getAdminClient()
+        result = client.schema('dtf_secure_info').table('user_keys').select('*').execute()
+        return jsonify(result.data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+

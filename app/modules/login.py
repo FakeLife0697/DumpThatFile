@@ -118,9 +118,9 @@ def login():
                     'email': response.user.email,
                     'user_metadata': response.user.user_metadata,
                     'role': user_role,
-                    'last_activity': datetime.now(timezone.utc).isoformat()
+                    'last_activity': datetime.now(timezone.utc).isoformat(),
+                    'access_token': response.session.access_token
                 }
-                session['access_token'] = response.session.access_token
                 
                 # Log successful login
                 log_auth_event(

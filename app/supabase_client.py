@@ -22,19 +22,17 @@ def getPublicClient() -> Client:
             options = ClientOptions(
                 flow_type = "pkce"
             ))
+        
+        from flask import session
+        # Set the session token if available
+        if 'user' in session and 'access_token' in session['user']:
+            try:
+                publicClient.auth.set_session(session['user']['access_token'])
+            except Exception as auth_error:
+                print(f"Error setting session: {auth_error}")
+            
         return publicClient
+    
     except Exception as e:
         print(f"Error establishing public connection: {e}")
-        return None
-
-def getAuthenticatedClient(access_token: str) -> Client:
-    try:
-        client: Client = Client(url, public_key,
-            options = ClientOptions(
-                flow_type = "pkce"
-            ))
-        client.auth.set_session(access_token)
-        return client
-    except Exception as e:
-        print(f"Error establishing authenticated connection: {e}")
         return None
