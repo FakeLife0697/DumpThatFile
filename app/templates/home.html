@@ -348,7 +348,7 @@
         }
 
         function selectFriend(userId, username, email) {
-            document.getElementById('receiverSearch').value = `${username} (${email})`;
+            document.getElementById('receiverSearch').value = username;
             document.getElementById('receiver_id').value = userId;
             window.scrollTo(0, 0); // Scroll to upload section
         }

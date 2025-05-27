@@ -46,7 +46,7 @@ class RSA(Encryption):
             
         return private_key, public_key
             
-    def encrypt(self, aes_key: str, public_key = None):
+    def encrypt(self, aes_key: str, public_key: str = None):
         cipher_aes_key = None
         try:
             if public_key:
@@ -70,11 +70,10 @@ class RSA(Encryption):
         except Exception as e:
             print("Process failed: RSA encryption")
             print(e)
-            raise e
 
         return cipher_aes_key
 
-    def decrypt(self, cipher_aes_key: str, private_key = None):
+    def decrypt(self, cipher_aes_key: str, private_key: str = None):
         decrypted_key = None
         try:
             if private_key:

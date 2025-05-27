@@ -55,7 +55,7 @@ def home():
         
         try:
             # First check if they are friends
-            client = getPublicClient()
+            client = getAdminClient()
             print(f"Checking friendship between user {session['user']['id']} and receiver {receiver_id}")  # Debug log
             
             # Query both directions of friendship
@@ -82,57 +82,111 @@ def home():
             
             # Create signature
             sha256 = SHA256()
-            signature = sha256.hash(file.read())
-            file.seek(0)  # Reset file pointer
+            # Create temp directory if it doesn't exist
+            temp_dir = os.path.join(os.path.dirname(os.path.relpath(__file__)), 'temp')
+            os.makedirs(temp_dir, exist_ok = True)
             
-            # Generate and encrypt with AES
-            aes = AES()
-            aes_key = aes.generate_key()
-            encrypted_file = aes.encrypt(file.read())
-            file.seek(0)  # Reset file pointer
+            # Save file with original name in temp directory
+            original_filename = file.filename
+            original_filepath = os.path.join(temp_dir, original_filename)
+            file.save(original_filepath)
             
-            # Encrypt AES key with receiver's public key
-            rsa = RSA()
-            encrypted_aes_key = rsa.encrypt(aes_key, receiver_public_key)
-            
-            # Upload signature file to Supabase storage
-            signature_path = f"signature-files/{sign_id}/{file.filename}.sig"
-            client.storage.from_('signature-files').upload(
-                signature_path,
-                signature
-            )
-            
-            # Upload encrypted file to Supabase storage
-            file_path = f"encrypted-files/{file_id}/{file.filename}"
-            client.storage.from_('encrypted-files').upload(
-                file_path,
-                encrypted_file
-            )
-            
-            # Create signature record
-            client.table('signatures').insert({
-                'sign_id': sign_id,
-                'sign_path': signature_path,
-                'creating_date': 'now()'
-            }).execute()
-            
-            # Create file record
-            client.table('files').insert({
-                'file_id': file_id,
-                'file_name': file.filename,
-                'file_path': file_path,
-                'aes_key': encrypted_aes_key,
-                'file_format': file.filename.split('.')[-1],
-                'sign_id': sign_id,
-                'receiver': receiver_id,
-                'sender': session['user']['id']
-            }).execute()
-            
-            flash('File uploaded and encrypted successfully!', 'success')
-            
+            try:
+                # Generate hash
+                signature = sha256.hash(original_filepath)
+                
+                # Save signature to temp file
+                signature_path = os.path.join(temp_dir, f"{original_filename}.sig")
+                with open(signature_path, 'w') as f:
+                    f.write(signature)
+                
+                # Generate and encrypt with AES
+                aes = AES()
+                aes_key, iv = aes.generate_key()
+                encrypted_file_path = aes.encrypt(original_filepath, aes_key, iv)
+                
+                # Get just the filename for storage
+                encrypted_filename = f"{original_filename}.enc"
+                signature_filename = f"{original_filename}.sig"
+                
+                # Read encrypted file
+                with open(encrypted_file_path, 'rb') as f:
+                    encrypted_file = f.read()
+                
+                # Read signature file
+                with open(signature_path, 'rb') as f:
+                    signature_content = f.read()
+                
+                # Upload signature to Supabase storage
+                signature_storage_path = f"signature-files/{sign_id}/{signature_filename}"
+                signature_upload = client.storage.from_('signature-files').upload(
+                    signature_storage_path,
+                    signature_content
+                )
+                if not signature_upload:
+                    raise Exception("Failed to upload signature file")
+                
+                # Upload encrypted file to Supabase storage
+                file_path = f"encrypted-files/{file_id}/{encrypted_filename}"
+                file_upload = client.storage.from_('encrypted-files').upload(
+                    file_path,
+                    encrypted_file
+                )
+                if not file_upload:
+                    raise Exception("Failed to upload encrypted file")
+                
+                # Encrypt AES key with receiver's public key
+                rsa = RSA()
+                encrypted_aes_key = rsa.encrypt(aes_key, receiver_public_key)
+                if not encrypted_aes_key:
+                    raise Exception("Failed to encrypt AES key")
+                
+                # Create signature record
+                signature_result = client.table('signatures').insert({
+                    'sign_id': sign_id,
+                    'sign_path': signature_storage_path,
+                    'creating_date': 'now()'
+                }).execute()
+                if not signature_result.data:
+                    raise Exception("Failed to create signature record")
+                
+                # Create file record
+                file_result = client.table('files').insert({
+                    'file_id': file_id,
+                    'file_name': original_filename,
+                    'file_path': file_path,
+                    'aes_key': encrypted_aes_key,
+                    'file_format': original_filename.split('.')[-1],
+                    'sign_id': sign_id,
+                    'receiver': receiver_id,
+                    'sender': session['user']['id']
+                }).execute()
+                if not file_result.data:
+                    raise Exception("Failed to create file record")
+                
+                # Clean up temporary files
+                os.remove(original_filepath)
+                os.remove(signature_path)
+                os.remove(encrypted_file_path)
+                
+                flash('File uploaded and encrypted successfully!', 'success')
+                return redirect(url_for('home.home'))
+                
+            except Exception as e:
+                # Clean up on error
+                if os.path.exists(original_filepath):
+                    os.remove(original_filepath)
+                if os.path.exists(signature_path):
+                    os.remove(signature_path)
+                if os.path.exists(encrypted_file_path):
+                    os.remove(encrypted_file_path)
+                print(f"Error during file processing: {str(e)}")
+                flash(f'Error processing file: {str(e)}', 'error')
+                return redirect(request.url)
+                
         except Exception as e:
-            flash(f'Error processing file: {str(e)}', 'error')
-            print(e)
+            print(f"Error during initial checks: {str(e)}")
+            flash(f'Error: {str(e)}', 'error')
             return redirect(request.url)
             
     return render_template('home.html')
