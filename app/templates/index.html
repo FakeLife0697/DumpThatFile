@@ -5,12 +5,21 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to DumpThatFile</h1>
-        <div class="auth-buttons">
-            <a href="{{ url_for('login.login') }}" class="btn">Login</a>
-            <a href="{{ url_for('signup.signup') }}" class="btn">Sign Up</a>
+    <header>
+        <div class="header-content">
+            <div class="logo">DumpThatFile</div>
+            <nav class="auth-buttons">
+                <a href="{{ url_for('login.login') }}" class="btn">Login</a>
+                <a href="{{ url_for('signup.signup') }}" class="btn">Sign Up</a>
+            </nav>
         </div>
-    </div>
+    </header>
+
+    <main class="hero">
+        <div class="hero-content">
+            <h1>Just upload your file - we'll take care all the security for you.</h1>
+            <p>Simple, fast, and secure</p>
+        </div>
+    </main>
 </body>
 </html>

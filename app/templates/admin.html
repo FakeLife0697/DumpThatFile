@@ -5,123 +5,130 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Admin Dashboard</h1>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <div class="signout-section">
-            <a href="{{ url_for('home.home') }}" class="btn btn-home">Home Page</a>
-            <a href="{{ url_for('admin.logout') }}" class="btn btn-signout">Sign Out</a>
+    <header>
+        <div class="header-content">
+            <div class="logo">DumpThatFile</div>
+            <nav class="auth-buttons">
+                <a href="{{ url_for('home.home') }}" class="btn btn-home">Home Page</a>
+                <a href="{{ url_for('admin.logout') }}" class="btn btn-signout">Sign Out</a>
+            </nav>
         </div>
+    </header>
 
-        <div class="admin-section">
-            <h2>Users</h2>
-            <div class="table-container">
-                <table id="usersTable">
-                    <thead>
-                        <tr>
-                            <th>User ID</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Public Key</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+    <main class="main-content">
+        <div class="container">
+            <h1>Admin Dashboard</h1>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="admin-section">
+                <h2>Users</h2>
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>User ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Public Key</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>Files</h2>
+                <div class="table-container">
+                    <table id="filesTable">
+                        <thead>
+                            <tr>
+                                <th>File ID</th>
+                                <th>File Path</th>
+                                <th>Sender</th>
+                                <th>Receiver</th>
+                                <th>Created Date</th>
+                                <th>Expiry Date</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>Friendships</h2>
+                <div class="table-container">
+                    <table id="friendsTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Friend</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>Signatures</h2>
+                <div class="table-container">
+                    <table id="signaturesTable">
+                        <thead>
+                            <tr>
+                                <th>Signature ID</th>
+                                <th>Path</th>
+                                <th>Created Date</th>
+                                <th>Expiry Date</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>User Roles</h2>
+                <div class="table-container">
+                    <table id="rolesTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>User Keys</h2>
+                <div class="table-container">
+                    <table id="keysTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Public Key</th>
+                                <th>Private Key</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-
-        <div class="admin-section">
-            <h2>Files</h2>
-            <div class="table-container">
-                <table id="filesTable">
-                    <thead>
-                        <tr>
-                            <th>File ID</th>
-                            <th>File Path</th>
-                            <th>Sender</th>
-                            <th>Receiver</th>
-                            <th>Created Date</th>
-                            <th>Expiry Date</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="admin-section">
-            <h2>Friendships</h2>
-            <div class="table-container">
-                <table id="friendsTable">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Friend</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="admin-section">
-            <h2>Signatures</h2>
-            <div class="table-container">
-                <table id="signaturesTable">
-                    <thead>
-                        <tr>
-                            <th>Signature ID</th>
-                            <th>Path</th>
-                            <th>Created Date</th>
-                            <th>Expiry Date</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="admin-section">
-            <h2>User Roles</h2>
-            <div class="table-container">
-                <table id="rolesTable">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="admin-section">
-            <h2>User Keys</h2>
-            <div class="table-container">
-                <table id="keysTable">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Email</th>
-                            <th>Public Key</th>
-                            <th>Private Key</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    </main>
 
     <script>
         // Function to load users

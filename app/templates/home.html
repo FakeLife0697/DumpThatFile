@@ -5,102 +5,109 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to DumpThatFile</h1>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <div class="signout-section">
-            {% if session['user']['role'] == 'admin' %}
-                <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-admin">Admin Page</a>
-            {% endif %}
-            <a href="{{ url_for('home.logout') }}" class="btn btn-signout">Sign Out</a>
+    <header>
+        <div class="header-content">
+            <div class="logo">DumpThatFile</div>
+            <nav class="auth-buttons">
+                {% if session['user']['role'] == 'admin' %}
+                    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-admin">Admin Page</a>
+                {% endif %}
+                <a href="{{ url_for('home.logout') }}" class="btn btn-signout">Sign Out</a>
+            </nav>
         </div>
-        
-        <div class="key-management-section">
-            <h2>Key Management</h2>
-            <form method="POST" action="{{ url_for('home.generate_key_pair') }}">
-                <button type="submit" class="btn btn-warning">Generate New Key Pair</button>
-            </form>
-            <p class="key-info">Note: Generating a new key pair will invalidate your previous keys. Make sure to inform your contacts about this change.</p>
-        </div>
-        
-        <div class="upload-section">
-            <h2>Upload File</h2>
-            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <h1>Welcome, {{ session['user']['user_metadata']['username'] }}</h1>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="key-management-section">
+                <h2>Key Management</h2>
+                <form method="POST" action="{{ url_for('home.generate_key_pair') }}">
+                    <button type="submit" class="btn btn-warning">Generate New Key Pair</button>
+                </form>
+                <p class="key-info">Note: Generating a new key pair will invalidate your previous keys. Make sure to inform your contacts about this change.</p>
+            </div>
+            
+            <div class="upload-section">
+                <h2>Upload File</h2>
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <div class="form-group">
+                        <label for="receiver">Search Receiver:</label>
+                        <div class="search-container">
+                            <input type="text" id="receiverSearch" placeholder="Search by username or email">
+                            <button type="button" id="searchButton" class="btn btn-search">Search</button>
+                        </div>
+                        <div id="searchResults" class="search-results"></div>
+                        <input type="hidden" id="receiver_id" name="receiver_id" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="file">Select File (max 5MB):</label>
+                        <input type="file" id="file" name="file" required accept=".txt,.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
+                        <div id="fileInfo" class="file-info"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="expiry_date">Expiry Date (optional):</label>
+                        <input type="date" id="expiry_date" name="expiry_date">
+                        <small class="help-text">If not set, file will expire in 3 days</small>
+                    </div>
+                    
+                    <div id="uploadProgress" class="upload-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                        <div class="progress-text">Encrypting and uploading...</div>
+                    </div>
+                    
+                    <button type="submit" class="btn" id="uploadButton">Upload and Encrypt</button>
+                </form>
+            </div>
+
+            <div class="upload-section">
+                <h2>Find Users and Add Friends</h2>
                 <div class="form-group">
-                    <label for="receiver">Search Receiver:</label>
+                    <label for="friendSearch">Search Users:</label>
                     <div class="search-container">
-                        <input type="text" id="receiverSearch" placeholder="Search by username or email">
-                        <button type="button" id="searchButton" class="btn btn-search">Search</button>
+                        <input type="text" id="friendSearch" placeholder="Search by username or email">
+                        <button type="button" id="friendSearchButton" class="btn btn-search">Search</button>
                     </div>
-                    <div id="searchResults" class="search-results"></div>
-                    <input type="hidden" id="receiver_id" name="receiver_id" required>
+                    <div id="friendResults" class="search-results"></div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="file">Select File (max 5MB):</label>
-                    <input type="file" id="file" name="file" required accept=".txt,.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
-                    <div id="fileInfo" class="file-info"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="expiry_date">Expiry Date (optional):</label>
-                    <input type="date" id="expiry_date" name="expiry_date">
-                    <small class="help-text">If not set, file will expire in 3 days</small>
-                </div>
-                
-                <div id="uploadProgress" class="upload-progress" style="display: none;">
-                    <div class="progress-bar">
-                        <div class="progress-fill"></div>
-                    </div>
-                    <div class="progress-text">Encrypting and uploading...</div>
-                </div>
-                
-                <button type="submit" class="btn" id="uploadButton">Upload and Encrypt</button>
-            </form>
-        </div>
+            </div>
 
-        <div class="upload-section">
-            <h2>Find Users and Add Friends</h2>
-            <div class="form-group">
-                <label for="friendSearch">Search Users:</label>
-                <div class="search-container">
-                    <input type="text" id="friendSearch" placeholder="Search by username or email">
-                    <button type="button" id="friendSearchButton" class="btn btn-search">Search</button>
+            <div class="upload-section">
+                <h2>Friend List</h2>
+                <ul id="friendList"></ul>
+            </div>
+
+            <div class="upload-section">
+                <h2>Received Files</h2>
+                <div class="received-files-container">
+                    <table class="files-table">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>From</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receivedFiles"></tbody>
+                    </table>
                 </div>
-                <div id="friendResults" class="search-results"></div>
             </div>
         </div>
-
-        <div class="upload-section">
-            <h2>Friend List</h2>
-            <ul id="friendList"></ul>
-        </div>
-
-        <div class="upload-section">
-            <h2>Received Files</h2>
-            <div class="received-files-container">
-                <table class="files-table">
-                    <thead>
-                        <tr>
-                            <th>File Name</th>
-                            <th>From</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="receivedFiles"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    </main>
 
     <script>
         let searchTimeout;

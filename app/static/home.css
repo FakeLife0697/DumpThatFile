@@ -2,22 +2,55 @@ body {
     margin: 0;
     padding: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(to right, #4a90e2, #9013fe);
-    color: white;
+    background: linear-gradient(135deg, #4a90e2, #9013fe);
+    color: #f5f5f5;
+    min-height: 100vh;
+}
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 1rem;
+    z-index: 1000;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f5f5f5;
+    text-decoration: none;
+}
+
+.main-content {
+    padding-top: 5rem;
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: 40px 20px;
+    padding: 6rem 20px 2rem;
 }
 
 .container {
     max-width: 900px;
     width: 100%;
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
     padding: 30px;
     border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 h1, h2 {
@@ -48,12 +81,13 @@ h1, h2 {
 
 .key-management-section,
 .upload-section {
-    background-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
     padding: 25px;
     border-radius: 12px;
     margin-bottom: 30px;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
 .key-info {
@@ -78,45 +112,48 @@ label {
 input[type="text"],
 input[type="file"] {
     width: 100%;
-    padding: 10px;
-    border: none;
+    padding: 12px;
+    border: 2px solid transparent;
     border-radius: 8px;
-    background-color: #ffffff;
-    color: #333;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #2a0845;
     box-sizing: border-box;
     font-size: 1em;
+    transition: all 0.3s ease;
 }
 
 input:focus {
     outline: none;
-    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
 }
 
 .btn {
-    background-color: #ffffff;
-    color: #4a90e2;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #2a0845;
     padding: 12px 25px;
-    border: none;
+    border: 2px solid transparent;
     border-radius: 8px;
     cursor: pointer;
     font-size: 16px;
     font-weight: bold;
-    transition: 0.3s ease;
+    transition: background-color 0.2s ease;
 }
 
 .btn:hover {
-    background-color: #4a90e2;
+    background-color: transparent;
     color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.9);
 }
 
 .btn-warning {
-    background-color: #ff9800;
+    background-color: rgba(255, 152, 0, 0.9);
     color: white;
 }
 
 .btn-warning:hover {
-    background-color: #f57c00;
+    background-color: transparent;
+    border-color: rgba(255, 152, 0, 0.9);
 }
 
 .search-results {
@@ -149,7 +186,7 @@ input:focus {
 }
 
 .search-result-item:hover {
-    background-color: #eaeaea;
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 #friendList {
@@ -162,15 +199,21 @@ input:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
-    border-bottom: 1px solid #ddd;
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
     margin-bottom: 5px;
-    border-radius: 4px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
 }
 
 .friend-item:last-child {
     border-bottom: none;
+}
+
+.friend-item:hover {
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 .friend-item span {
@@ -192,31 +235,33 @@ input:focus {
 }
 
 .btn-admin {
-    background-color: #4CAF50;
+    background-color: rgba(76, 175, 80, 0.9);
     color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    padding: 0.5rem 1.5rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
     text-decoration: none;
+    transition: all 0.3s ease;
 }
 
 .btn-admin:hover {
-    background-color: #45a049;
+    background-color: transparent;
+    border-color: rgba(76, 175, 80, 0.9);
 }
 
 .btn-signout {
-    background-color: #f44336;
+    background-color: rgba(244, 67, 54, 0.9);
     color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    padding: 0.5rem 1.5rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
     text-decoration: none;
+    transition: all 0.3s ease;
 }
 
 .btn-signout:hover {
-    background-color: #da190b;
+    background-color: transparent;
+    border-color: rgba(244, 67, 54, 0.9);
 }
 
 .file-info {
@@ -239,16 +284,17 @@ input:focus {
 .progress-bar {
     width: 100%;
     height: 20px;
-    background-color: #f0f0f0;
+    background-color: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.15);
 }
 
 .progress-fill {
     width: 0%;
     height: 100%;
-    background-color: #007bff;
-    animation: progress 2s infinite linear;
+    background-color: rgba(0, 123, 255, 0.9);
+    transition: width 0.3s ease;
 }
 
 .progress-text {
@@ -256,12 +302,6 @@ input:focus {
     margin-top: 5px;
     font-size: 0.9em;
     color: #666;
-}
-
-@keyframes progress {
-    0% { width: 0%; }
-    50% { width: 50%; }
-    100% { width: 100%; }
 }
 
 .received-files-container {
@@ -291,7 +331,7 @@ input:focus {
 }
 
 .files-table tr:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .action-buttons {
@@ -350,4 +390,9 @@ input:focus {
     padding: 8px;
     background-color: #ffebee;
     border-radius: 4px;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 1rem;
 }
