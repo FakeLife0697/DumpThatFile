@@ -182,7 +182,7 @@ class AES(Encryption):
             print(e)
         
         return decrypted_file
-    
+
 class SHA256(Encryption):
     def __init__(self):
         super().__init__()
@@ -208,6 +208,6 @@ class SHA256(Encryption):
             print(e)
         
         return digest
-    
+        
     def compare(self, hash1 = None, hash2 = None):
         return hash1 == hash2

@@ -8,6 +8,7 @@ from app.modules.signup import signup_bp
 from app.modules.home import home_bp
 from app.modules.admin import admin_bp
 from app.logger import setup_logger
+from app.modules.check_expire import start_expiry_checker
     
 def create_app():
     application = Flask(__name__)
@@ -38,5 +39,8 @@ def create_app():
     application.register_blueprint(signup_bp)
     application.register_blueprint(home_bp)
     application.register_blueprint(admin_bp)
+    
+    # Start the expiry checker in background
+    start_expiry_checker()
     
     return application

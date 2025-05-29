@@ -45,10 +45,11 @@
                     <thead>
                         <tr>
                             <th>File ID</th>
-                            <th>File Name</th>
+                            <th>File Path</th>
                             <th>Sender</th>
                             <th>Receiver</th>
                             <th>Created Date</th>
+                            <th>Expiry Date</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -80,6 +81,7 @@
                             <th>Signature ID</th>
                             <th>Path</th>
                             <th>Created Date</th>
+                            <th>Expiry Date</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -154,10 +156,11 @@
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${file.file_id}</td>
-                            <td>${file.file_name}</td>
+                            <td>${file.file_path}</td>
                             <td>${file.sender?.username || 'Unknown'}</td>
                             <td>${file.receiver?.username || 'Unknown'}</td>
                             <td>${new Date(file.creating_date).toLocaleString()}</td>
+                            <td>${file.expiring_date ? new Date(file.expiring_date).toLocaleString() : 'Not set'}</td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -197,6 +200,7 @@
                             <td>${signature.sign_id}</td>
                             <td>${signature.sign_path}</td>
                             <td>${new Date(signature.creating_date).toLocaleString()}</td>
+                            <td>${signature.expiring_date ? new Date(signature.expiring_date).toLocaleString() : 'Not set'}</td>
                         `;
                         tbody.appendChild(tr);
                     });

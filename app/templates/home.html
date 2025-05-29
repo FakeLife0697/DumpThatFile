@@ -50,6 +50,12 @@
                     <div id="fileInfo" class="file-info"></div>
                 </div>
                 
+                <div class="form-group">
+                    <label for="expiry_date">Expiry Date (optional):</label>
+                    <input type="date" id="expiry_date" name="expiry_date">
+                    <small class="help-text">If not set, file will expire in 3 days</small>
+                </div>
+                
                 <div id="uploadProgress" class="upload-progress" style="display: none;">
                     <div class="progress-bar">
                         <div class="progress-fill"></div>
@@ -287,7 +293,10 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.error) {
+                if (data.reload) {
+                    // Reload the page to show flash messages
+                    window.location.reload();
+                } else if (data.error) {
                     alert(data.error);
                 } else {
                     alert(data.message);
@@ -422,6 +431,12 @@
         window.onload = () => {
             loadFriendList();
             loadReceivedFiles();
+            
+            // Set default expiry date to 3 days from now
+            const expiryInput = document.getElementById('expiry_date');
+            const defaultExpiry = new Date();
+            defaultExpiry.setDate(defaultExpiry.getDate() + 3);
+            expiryInput.value = defaultExpiry.toISOString().split('T')[0];
         }
     </script>
 </body>
