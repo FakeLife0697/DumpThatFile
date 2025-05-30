@@ -402,12 +402,12 @@
                         btnEncrypted.onclick = () => window.location = `/download-encrypted/${file.file_id}`;
                         tdActions.appendChild(btnEncrypted);
                         
-                        // Download decrypted button
-                        const btnDecrypted = document.createElement('button');
-                        btnDecrypted.className = 'btn';
-                        btnDecrypted.textContent = 'Download Decrypted';
-                        btnDecrypted.onclick = () => window.location = `/download-decrypted/${file.file_id}`;
-                        tdActions.appendChild(btnDecrypted);
+                        // Download signature button
+                        const btnSignature = document.createElement('button');
+                        btnSignature.className = 'btn';
+                        btnSignature.textContent = 'Download Signature';
+                        btnSignature.onclick = () => window.location = `/download-signature/${file.file_id}`;
+                        tdActions.appendChild(btnSignature);
                         
                         // Verify and download button
                         const btnVerify = document.createElement('button');

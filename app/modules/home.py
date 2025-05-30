@@ -439,9 +439,9 @@ def download_encrypted(file_id):
         flash(f'Error downloading file: {str(e)}', 'error')
         return redirect(url_for('home.home'))
 
-@home_bp.route('/download-decrypted/<file_id>', methods=['GET'])
+@home_bp.route('/download-signature/<file_id>', methods=['GET'])
 @login_required
-def download_decrypted(file_id):
+def download_signature(file_id):
     try:
         # Use admin client to ensure we can access the file
         client = getAdminClient()
@@ -454,69 +454,26 @@ def download_decrypted(file_id):
             return redirect(url_for('home.home'))
             
         file_info = file_result.data[0]
-        
-        # Get user's private key
-        key_result = client.schema('dtf_secure_info').table('user_keys').select('private_key').eq('user_id', session['user']['id']).execute()
-        
-        if not key_result.data:
-            flash('Private key not found', 'error')
+
+        sign_id = file_info['sign_id']
+        sign_result = client.table('signatures').select('*').eq('sign_id', sign_id).execute()
+
+        if not sign_result.data:
+            flash('Signature not found', 'error')
             return redirect(url_for('home.home'))
-            
-        private_key = key_result.data[0]['private_key']
-        
-        # Download encrypted file
-        encrypted_file = client.storage.from_('encrypted-files').download(file_info['file_path'])
-        
-        # Decrypt AES key with private key
-        rsa = RSA()
-        aes_key = rsa.decrypt(file_info['aes_key'], private_key)
-        
-        if not aes_key:
-            flash('Failed to decrypt AES key', 'error')
-            return redirect(url_for('home.home'))
-        
-        # Create temp directory if it doesn't exist
-        temp_dir = os.path.join(os.path.dirname(os.path.relpath(__file__)), 'temp')
-        os.makedirs(temp_dir, exist_ok = True)
-        
-        # Save encrypted file to temp location
-        temp_encrypted_file = os.path.join(temp_dir, f"temp_encrypted_{file_id}.enc")
-        with open(temp_encrypted_file, 'wb') as f:
-            f.write(encrypted_file)
-        
-        try:
-            # Decrypt file with AES using original method
-            aes = AES()
-            decrypted_file_path = aes.decrypt(temp_encrypted_file, aes_key)
-            
-            if not decrypted_file_path or not os.path.exists(decrypted_file_path):
-                flash('Failed to decrypt file', 'error')
-                return redirect(url_for('home.home'))
-            
-            # Read the decrypted file
-            with open(decrypted_file_path, 'rb') as f:
-                decrypted_data = f.read()
-            
-            # Clean up temp files
-            if os.path.exists(temp_encrypted_file):
-                os.remove(temp_encrypted_file)
-            if os.path.exists(decrypted_file_path):
-                os.remove(decrypted_file_path)
-            
-            return send_file(
-                io.BytesIO(decrypted_data),
-                mimetype = 'application/octet-stream',
-                as_attachment = True,
-                download_name = file_info['file_name']
-            )
-            
-        except Exception as e:
-            # Clean up temp files on error
-            if os.path.exists(temp_encrypted_file):
-                os.remove(temp_encrypted_file)
-            if 'decrypted_file_path' in locals() and os.path.exists(decrypted_file_path):
-                os.remove(decrypted_file_path)
-            raise e
+
+        sign_info = sign_result.data[0]
+        sign_path = sign_info['sign_path']
+
+        signature_result = client.storage.from_('signature-files').download(sign_path)
+
+        return send_file(
+            io.BytesIO(signature_result),
+            mimetype = 'application/octet-stream',
+            as_attachment = True,
+            download_name = f"{file_info['file_name']}.sig"
+        )
+
     except Exception as e:
         import traceback
         traceback.print_exc()
