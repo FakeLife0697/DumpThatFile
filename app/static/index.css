@@ -2,45 +2,96 @@ body {
     margin: 0;
     padding: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(to right, #4a90e2, #9013fe);
-    color: white;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: linear-gradient(135deg, #4a90e2, #9013fe);
+    color: #f5f5f5;
+    min-height: 100vh;
 }
 
-.container {
-    text-align: center;
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     background-color: rgba(255, 255, 255, 0.1);
-    padding: 50px;
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 1rem;
+    z-index: 1000;
 }
 
-h1 {
-    font-size: 2.5em;
-    margin-bottom: 30px;
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f5f5f5;
+    text-decoration: none;
 }
 
 .auth-buttons {
     display: flex;
-    justify-content: center;
-    gap: 20px;
+    gap: 1rem;
 }
 
 .btn {
-    padding: 12px 25px;
-    background-color: white;
-    color: #4a90e2;
+    padding: 0.5rem 1.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f5f5f5;
     text-decoration: none;
-    font-weight: bold;
+    font-weight: 500;
     border-radius: 8px;
-    transition: background-color 0.3s, color 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
 }
 
 .btn:hover {
-    background-color: #4a90e2;
-    color: white;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.hero {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 0 2rem;
+}
+
+.hero-content {
+    max-width: 800px;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+.hero p {
+    font-size: 1.5rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        padding: 0 1rem;
+    }
+
+    .hero h1 {
+        font-size: 2rem;
+    }
+
+    .hero p {
+        font-size: 1.2rem;
+    }
 }
