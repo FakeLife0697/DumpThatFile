@@ -68,13 +68,14 @@ def home():
         expiry_date_str = request.form.get('expiry_date')
         if expiry_date_str:
             try:
+                # Parse date and set time to end of day in UTC
                 expiry_date = datetime.fromisoformat(expiry_date_str)
-                expiry_date = expiry_date.replace(hour = 23, minute = 59, second = 59)
+                expiry_date = expiry_date.replace(hour = 23, minute = 59, second = 59, tzinfo = timezone.utc)
             except ValueError:
                 flash('Invalid expiry date format', 'error')
                 return redirect(request.url)
         else:
-            # Default to 3 days from now at end of day
+            # Default to 3 days from now at end of day in UTC
             expiry_date = datetime.now(timezone.utc).replace(hour = 23, minute = 59, second = 59) + timedelta(days = 3)
         
         try:
@@ -164,7 +165,7 @@ def home():
                 if not encrypted_aes_key:
                     raise Exception("Failed to encrypt AES key")
                 
-                # Create signature record
+                # Create timestamp for both records (ensure consistency)
                 creating_date = datetime.now(timezone.utc)
 
                 signature_result = client.table('signatures').insert({

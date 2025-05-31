@@ -33,8 +33,17 @@ def check_and_delete_expired_files():
         for file in files_result.data:
             if file['expiring_date']:
                 try:
-                    # Parse the expiring date
-                    expire_date = datetime.fromisoformat(file['expiring_date'].replace('Z', '+00:00'))
+                    # Parse the expiring date and ensure it's timezone-aware
+                    expire_date_str = file['expiring_date']
+                    if expire_date_str.endswith('Z'):
+                        expire_date_str = expire_date_str.replace('Z', '+00:00')
+                    
+                    expire_date = datetime.fromisoformat(expire_date_str)
+                    
+                    # If the date is timezone-naive, assume it's UTC
+                    if expire_date.tzinfo is None:
+                        expire_date = expire_date.replace(tzinfo = timezone.utc)
+                    
                     if expire_date < current_time:
                         expired_files.append(file)
                 except (ValueError, TypeError) as e:
@@ -70,8 +79,17 @@ def check_and_delete_expired_signatures():
         for signature in signatures_result.data:
             if signature['expiring_date']:
                 try:
-                    # Parse the expiring date
-                    expire_date = datetime.fromisoformat(signature['expiring_date'].replace('Z', '+00:00'))
+                    # Parse the expiring date and ensure it's timezone-aware
+                    expire_date_str = signature['expiring_date']
+                    if expire_date_str.endswith('Z'):
+                        expire_date_str = expire_date_str.replace('Z', '+00:00')
+                    
+                    expire_date = datetime.fromisoformat(expire_date_str)
+                    
+                    # If the date is timezone-naive, assume it's UTC
+                    if expire_date.tzinfo is None:
+                        expire_date = expire_date.replace(tzinfo = timezone.utc)
+                    
                     if expire_date < current_time:
                         expired_signatures.append(signature)
                 except (ValueError, TypeError) as e:
@@ -99,7 +117,8 @@ def check_expired_files_and_signatures():
 
 def run_scheduler():
     log_expiry_event("SCHEDULER_INIT", "Starting expiry check scheduler...")
-    schedule.every().day.at("00:00").do(check_expired_files_and_signatures)
+    # schedule.every().day.at("00:00").do(check_expired_files_and_signatures)
+    schedule.every().minute.do(check_expired_files_and_signatures)
     
     while True:
         schedule.run_pending()
