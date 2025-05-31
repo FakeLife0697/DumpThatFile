@@ -221,19 +221,20 @@ def delete_file_from_storage_and_db(file_id):
         file_data = file_result.data[0]
         file_path = file_data['file_path']
         
-        # Delete from storage if file_path exists
         if file_path:
             try:
                 client.storage.from_('encrypted-files').remove([file_path])
+                print(f"Successfully deleted file from storage: {file_path}")
             except Exception as storage_error:
-                print(f"Warning: Failed to delete file from storage: {storage_error}")
+                print(f"Failed to delete file from storage: {file_path}, Error: {storage_error}")
+                return {'error': 'Failed to delete file from storage'}, 500
         
         # Delete from database
         delete_result = client.table('files').delete().eq('file_id', file_id).execute()
         if not delete_result.data:
-            return {'error': 'Failed to delete file from database'}, 500
+            return {'error': 'Failed to delete row from database'}, 500
         
-        return {'message': 'File deleted successfully'}, 200
+        return {'message': 'File and row deleted successfully'}, 200
         
     except Exception as e:
         return {'error': f'Error deleting file: {str(e)}'}, 500
@@ -250,12 +251,13 @@ def delete_signature_from_storage_and_db(signature_id):
         signature_data = signature_result.data[0]
         sign_path = signature_data['sign_path']
         
-        # Delete from storage if sign_path exists
         if sign_path:
             try:
                 client.storage.from_('signature-files').remove([sign_path])
+                print(f"Successfully deleted signature from storage: {sign_path}")
             except Exception as storage_error:
-                print(f"Warning: Failed to delete signature from storage: {storage_error}")
+                print(f"Failed to delete signature from storage: {sign_path}, Error: {storage_error}")
+                return {'error': 'Failed to delete signature from storage'}, 500
         
         # Delete from database
         delete_result = client.table('signatures').delete().eq('sign_id', signature_id).execute()
