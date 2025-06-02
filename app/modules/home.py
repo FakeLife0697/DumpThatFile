@@ -323,25 +323,82 @@ def generate_key_pair():
         
         while retry_count < max_retries:
             try:
-                # First check if user already has keys
-                existing_keys = admin_client.schema('dtf_secure_info').table('user_keys').select('*').eq('user_id', session['user']['id']).execute()
-                
-                if existing_keys.data:
-                    # Update existing keys
-                    keys_response = admin_client.schema('dtf_secure_info').table('user_keys').update({
-                        'public_key': public_key,
-                        'private_key': private_key
-                    }).eq('user_id', session['user']['id']).execute()
-                else:
-                    # Insert new keys
-                    keys_response = admin_client.schema('dtf_secure_info').table('user_keys').insert({
-                        'user_id': session['user']['id'],
-                        'public_key': public_key,
-                        'private_key': private_key
-                    }).execute()
                 # Update public_key in users table
                 user_response = admin_client.schema('public').table('users').update({
                     'public_key': public_key
+                }).eq('user_id', session['user']['id']).execute()
+                
+                if not user_response.data:
+                    flash('Failed to update key pair', 'error')
+                    return redirect(url_for('home.home'))
+                
+            except (Timeout, RequestException) as e:
+                retry_count += 1
+                if retry_count == max_retries:
+                    flash(f"Database operation timed out after {max_retries} attempts: {str(e)}", 'error')
+                    return redirect(url_for('home.home'))
+                time.sleep(1)
+            except Exception as e:
+                flash(f'Error generating key pair: {str(e)}', 'error')
+                return redirect(url_for('home.home'))
+        
+        # Return the private key as a downloadable file
+        return send_file(
+            io.BytesIO(private_key.encode('utf-8')),
+            mimetype = 'application/x-pem-file',
+            as_attachment = True,
+            download_name = 'private_key.pem'
+        )
+        
+    except Exception as e:
+        flash(f'Error generating key pair: {str(e)}', 'error')
+        return redirect(url_for('home.home'))
+
+@home_bp.route('/upload-public-key', methods=['POST'])
+@login_required
+def upload_public_key():
+    try:
+        if 'public_key_file' not in request.files:
+            flash('No public key file selected', 'error')
+            return redirect(url_for('home.home'))
+        
+        file = request.files['public_key_file']
+        if file.filename == '':
+            flash('No public key file selected', 'error')
+            return redirect(url_for('home.home'))
+        
+        # Read the public key content
+        public_key_content = file.read().decode('utf-8').strip()
+        
+        # Basic validation to check if it looks like a PEM formatted key
+        if (not (public_key_content.startswith('-----BEGIN PUBLIC KEY-----') and 
+                public_key_content.endswith('-----END PUBLIC KEY-----'))) \
+            or (not (public_key_content.startswith('-----BEGIN RSA PUBLIC KEY-----') and 
+                public_key_content.endswith('-----END RSA PUBLIC KEY-----'))):
+            flash('Invalid public key format. Please upload a valid PEM format public key.', 'error')
+            return redirect(url_for('home.home'))
+        
+        # Validate the public key using RSA module
+        rsa = RSA()
+        try:
+            # Try to validate the key by attempting to use it
+            test_message = "test"
+            rsa.encrypt(test_message, public_key_content)
+        except Exception:
+            flash('Invalid public key. Please ensure the key is valid and in correct format.', 'error')
+            return redirect(url_for('home.home'))
+        
+        # Store the public key
+        admin_client = getAdminClient()
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                
+                # Update public_key in users table
+                user_response = admin_client.schema('public').table('users').update({
+                    'public_key': public_key_content
                 }).eq('user_id', session['user']['id']).execute()
                 
                 if not user_response.data:
@@ -353,17 +410,14 @@ def generate_key_pair():
                     raise Exception(f"Database operation timed out after {max_retries} attempts: {str(e)}")
                 time.sleep(1)
             except Exception as e:
-                raise e
+                flash(f'Error uploading public key: {str(e)}', 'error')
+                return redirect(url_for('home.home'))
         
-        if not keys_response.data:
-            flash('Failed to update key pair', 'error')
-            return redirect(url_for('home.home'))
-        
-        flash('Key pair generated successfully!', 'success')
+        flash('Public key uploaded successfully!', 'success')
         return redirect(url_for('home.home'))
         
     except Exception as e:
-        flash(f'Error generating key pair: {str(e)}', 'error')
+        flash(f'Error uploading public key: {str(e)}', 'error')
         return redirect(url_for('home.home'))
 
 @home_bp.route('/get-received-files', methods=['GET'])

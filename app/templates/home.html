@@ -31,10 +31,27 @@
             
             <div class="key-management-section">
                 <h2>Key Management</h2>
-                <form method="POST" action="{{ url_for('home.generate_key_pair') }}">
-                    <button type="submit" class="btn btn-warning">Generate New Key Pair</button>
-                </form>
-                <p class="key-info">Note: Generating a new key pair will invalidate your previous keys. Make sure to inform your contacts about this change.</p>
+                
+                <div class="key-option">
+                    <h3>Option 1: Generate New Key Pair</h3>
+                    <form method="POST" action="{{ url_for('home.generate_key_pair') }}" id="generateKeyForm">
+                        <button type="submit" class="btn btn-warning">Generate New Key Pair</button>
+                    </form>
+                    <p class="key-info">Note: When you generate a new key pair, your private key will be automatically downloaded. Make sure to save it securely! Generating a new key pair will invalidate your previous keys.</p>
+                </div>
+                
+                <div class="key-option">
+                    <h3>Option 2: Upload Your Own Public Key</h3>
+                    <form method="POST" action="{{ url_for('home.upload_public_key') }}" enctype="multipart/form-data" id="uploadKeyForm">
+                        <div class="form-group">
+                            <label for="public_key_file">Select Public Key File (.pem):</label>
+                            <input type="file" id="public_key_file" name="public_key_file" accept=".pem,.txt" required>
+                            <small class="help-text">Upload a PEM format public key file</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload Public Key</button>
+                    </form>
+                    <p class="key-info">Note: Upload your own public key if you already have an RSA key pair. Make sure to keep your private key safe!</p>
+                </div>
             </div>
             
             <div class="upload-section">
@@ -445,6 +462,60 @@
             defaultExpiry.setDate(defaultExpiry.getDate() + 3);
             expiryInput.value = defaultExpiry.toISOString().split('T')[0];
         }
+
+        // Handle key generation form submission
+        document.getElementById('generateKeyForm').addEventListener('submit', function(e) {
+            const confirmed = confirm('Are you sure you want to generate a new key pair? This will:\n\n' +
+                '• Replace your current keys\n' +
+                '• Download your new private key file\n' +
+                '• Require informing your contacts about the change\n\n' +
+                'Make sure to save the downloaded private key file securely!');
+            
+            if (!confirmed) {
+                e.preventDefault();
+            }
+        });
+
+        // Handle public key file upload validation
+        document.getElementById('public_key_file').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                // Check file size (should be reasonable for a key file)
+                if (file.size > 10 * 1024) { // 10KB should be more than enough for a public key
+                    alert('Key file seems too large. Public key files are typically under 10KB.');
+                    this.value = '';
+                    return;
+                }
+
+                // Check file extension
+                const fileName = file.name.toLowerCase();
+                if (!fileName.endsWith('.pem') && !fileName.endsWith('.txt')) {
+                    alert('Please select a .pem or .txt file containing your public key.');
+                    this.value = '';
+                    return;
+                }
+            }
+        });
+
+        // Handle public key upload form submission
+        document.getElementById('uploadKeyForm').addEventListener('submit', function(e) {
+            const file = document.getElementById('public_key_file').files[0];
+            if (!file) {
+                e.preventDefault();
+                alert('Please select a public key file to upload.');
+                return;
+            }
+
+            const confirmed = confirm('Are you sure you want to upload this public key? This will:\n\n' +
+                '• Replace your current public key\n' +
+                '• Allow others to send you encrypted files\n' +
+                '• Require you to use your corresponding private key for decryption\n\n' +
+                'Make sure you have the corresponding private key saved securely!');
+            
+            if (!confirmed) {
+                e.preventDefault();
+            }
+        });
     </script>
 </body>
 </html>

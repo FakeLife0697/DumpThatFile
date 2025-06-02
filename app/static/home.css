@@ -110,7 +110,8 @@ label {
 }
 
 input[type="text"],
-input[type="file"] {
+input[type="file"],
+input[type="date"] {
     width: 100%;
     padding: 12px;
     border: 2px solid transparent;
@@ -395,4 +396,41 @@ input:focus {
 .auth-buttons {
     display: flex;
     gap: 1rem;
+}
+
+.key-option {
+    background-color: rgba(255, 255, 255, 0.08);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.key-option:last-child {
+    margin-bottom: 0;
+}
+
+.key-option h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #ffffff;
+    font-size: 1.1em;
+    text-align: left;
+}
+
+.btn-primary {
+    background-color: rgba(74, 144, 226, 0.9);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: transparent;
+    border-color: rgba(74, 144, 226, 0.9);
+}
+
+.help-text {
+    color: #b0b0b0;
+    font-size: 0.85em;
+    margin-top: 5px;
+    display: block;
 }
