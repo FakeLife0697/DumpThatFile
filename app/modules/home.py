@@ -332,6 +332,8 @@ def generate_key_pair():
                     flash('Failed to update key pair', 'error')
                     return redirect(url_for('home.home'))
                 
+                break
+                
             except (Timeout, RequestException) as e:
                 retry_count += 1
                 if retry_count == max_retries:
@@ -368,14 +370,14 @@ def upload_public_key():
             return redirect(url_for('home.home'))
         
         # Read the public key content
-        public_key_content = file.read().decode('utf-8').strip()
+        public_key_content = file.read().decode('utf-8')
         
         # Basic validation to check if it looks like a PEM formatted key
         if (not (public_key_content.startswith('-----BEGIN PUBLIC KEY-----') and 
                 public_key_content.endswith('-----END PUBLIC KEY-----'))) \
-            or (not (public_key_content.startswith('-----BEGIN RSA PUBLIC KEY-----') and 
+            and (not (public_key_content.startswith('-----BEGIN RSA PUBLIC KEY-----') and 
                 public_key_content.endswith('-----END RSA PUBLIC KEY-----'))):
-            flash('Invalid public key format. Please upload a valid PEM format public key.', 'error')
+            flash(f'Invalid public key format. Please upload a valid PEM format public key.\n{public_key_content}', 'error')
             return redirect(url_for('home.home'))
         
         # Validate the public key using RSA module
