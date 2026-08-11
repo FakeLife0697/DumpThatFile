@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - DumpThatFile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">DumpThatFile</div>
+            <nav class="auth-buttons">
+                <a href="{{ url_for('home.home') }}" class="btn btn-home">Home Page</a>
+                <a href="{{ url_for('admin.logout') }}" class="btn btn-signout">Sign Out</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <h1>Admin Dashboard</h1>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="admin-section">
+                <h2>Users</h2>
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>User ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Public Key</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>Files</h2>
+                <div class="table-container">
+                    <table id="filesTable">
+                        <thead>
+                            <tr>
+                                <th>File ID</th>
+                                <th>File Path</th>
+                                <th>Sender</th>
+                                <th>Receiver</th>
+                                <th>Created Date</th>
+                                <th>Expiry Date</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>Friendships</h2>
+                <div class="table-container">
+                    <table id="friendsTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Friend</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>Signatures</h2>
+                <div class="table-container">
+                    <table id="signaturesTable">
+                        <thead>
+                            <tr>
+                                <th>Signature ID</th>
+                                <th>Path</th>
+                                <th>Created Date</th>
+                                <th>Expiry Date</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>User Roles</h2>
+                <div class="table-container">
+                    <table id="rolesTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>User Keys</h2>
+                <div class="table-container">
+                    <table id="keysTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Public Key</th>
+                                <th>Private Key</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Function to load users
+        function loadUsers() {
+            fetch('/admin/users')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#usersTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(user => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${user.user_id}</td>
+                            <td>${user.username}</td>
+                            <td>${user.email}</td>
+                            <td>${user.public_key || 'Not set'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading users:', error));
+        }
+
+        // Function to load files
+        function loadFiles() {
+            fetch('/admin/files')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#filesTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(file => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${file.file_id}</td>
+                            <td>${file.file_path}</td>
+                            <td>${file.sender?.username || 'Unknown'}</td>
+                            <td>${file.receiver?.username || 'Unknown'}</td>
+                            <td>${new Date(file.creating_date).toLocaleString()}</td>
+                            <td>${file.expiring_date ? new Date(file.expiring_date).toLocaleString() : 'Not set'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading files:', error));
+        }
+
+        // Function to load friends
+        function loadFriends() {
+            fetch('/admin/friends')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#friendsTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(friendship => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${friendship.users?.username || 'Unknown'}</td>
+                            <td>${friendship.users_1?.username || 'Unknown'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading friends:', error));
+        }
+
+        // Function to load signatures
+        function loadSignatures() {
+            fetch('/admin/signatures')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#signaturesTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(signature => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${signature.sign_id}</td>
+                            <td>${signature.sign_path}</td>
+                            <td>${new Date(signature.creating_date).toLocaleString()}</td>
+                            <td>${signature.expiring_date ? new Date(signature.expiring_date).toLocaleString() : 'Not set'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading signatures:', error));
+        }
+
+        // Function to load roles
+        function loadRoles() {
+            fetch('/admin/roles')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#rolesTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(role => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${role.users?.username || 'Unknown'}</td>
+                            <td>${role.users?.email || 'Unknown'}</td>
+                            <td>${role.role}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading roles:', error));
+        }
+
+        // Function to load keys
+        function loadKeys() {
+            fetch('/admin/keys')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#keysTable tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(key => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${key.users?.username || 'Unknown'}</td>
+                            <td>${key.users?.email || 'Unknown'}</td>
+                            <td>${key.public_key}</td>
+                            <td>${key.private_key}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error loading keys:', error));
+        }
+
+        // Load all data when page loads
+        window.onload = function() {
+            loadUsers();
+            loadFiles();
+            loadFriends();
+            loadSignatures();
+            loadRoles();
+            loadKeys();
+        };
+    </script>
+</body>
+</html>

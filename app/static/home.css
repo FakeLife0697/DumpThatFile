@@ -1,0 +1,436 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #4a90e2, #9013fe);
+    color: #f5f5f5;
+    min-height: 100vh;
+}
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 1rem;
+    z-index: 1000;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f5f5f5;
+    text-decoration: none;
+}
+
+.main-content {
+    padding-top: 5rem;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 6rem 20px 2rem;
+}
+
+.container {
+    max-width: 900px;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+h1, h2 {
+    text-align: center;
+    color: #ffffff;
+    margin-bottom: 25px;
+}
+
+.alert {
+    padding: 12px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.alert-success {
+    background-color: rgba(40, 167, 69, 0.9);
+    color: #fff;
+    border: 1px solid rgba(40, 167, 69, 0.7);
+}
+
+.alert-error,
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.9);
+    color: #fff;
+    border: 1px solid rgba(220, 53, 69, 0.7);
+}
+
+.key-management-section,
+.upload-section {
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.key-info {
+    color: #e0e0e0;
+    font-size: 0.9em;
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: #ddd;
+    font-weight: 600;
+}
+
+input[type="text"],
+input[type="file"],
+input[type="date"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #2a0845;
+    box-sizing: border-box;
+    font-size: 1em;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+.btn {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #2a0845;
+    padding: 12px 25px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+
+.btn:hover {
+    background-color: transparent;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.btn-warning {
+    background-color: rgba(255, 152, 0, 0.9);
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: transparent;
+    border-color: rgba(255, 152, 0, 0.9);
+}
+
+.search-results {
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #000;
+    position: relative;
+    z-index: 10;
+}
+
+.search-results:not(:empty) {
+    display: block;
+}
+
+.search-result-item {
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+#friendList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.friend-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    margin-bottom: 5px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.friend-item:last-child {
+    border-bottom: none;
+}
+
+.friend-item:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.friend-item span {
+    color: #fff;
+}
+
+.no-friends {
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+}
+
+.signout-section {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    justify-content: flex-end;
+}
+
+.btn-admin {
+    background-color: rgba(76, 175, 80, 0.9);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-admin:hover {
+    background-color: transparent;
+    border-color: rgba(76, 175, 80, 0.9);
+}
+
+.btn-signout {
+    background-color: rgba(244, 67, 54, 0.9);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-signout:hover {
+    background-color: transparent;
+    border-color: rgba(244, 67, 54, 0.9);
+}
+
+.file-info {
+    margin-top: 8px;
+    font-size: 0.9em;
+}
+
+.file-info .error {
+    color: #dc3545;
+}
+
+.file-info .success {
+    color: #28a745;
+}
+
+.upload-progress {
+    margin: 15px 0;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    background-color: rgba(0, 123, 255, 0.9);
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.received-files-container {
+    overflow-x: auto;
+    margin-top: 20px;
+}
+
+.files-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.files-table th,
+.files-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.files-table th {
+    background-color: rgba(255, 255, 255, 0.15);
+    font-weight: bold;
+    color: #fff;
+}
+
+.files-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+    padding: 6px 12px;
+    font-size: 0.9em;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    color: white;
+}
+
+.error-message {
+    color: #dc3545;
+    text-align: center;
+    padding: 20px;
+}
+
+.search-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.search-container input {
+    flex: 1;
+}
+
+.btn-search {
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-search:hover {
+    background-color: #45a049;
+}
+
+.search-result-item.error {
+    color: #ff0000;
+    padding: 8px;
+    background-color: #ffebee;
+    border-radius: 4px;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.key-option {
+    background-color: rgba(255, 255, 255, 0.08);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.key-option:last-child {
+    margin-bottom: 0;
+}
+
+.key-option h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #ffffff;
+    font-size: 1.1em;
+    text-align: left;
+}
+
+.btn-primary {
+    background-color: rgba(74, 144, 226, 0.9);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: transparent;
+    border-color: rgba(74, 144, 226, 0.9);
+}
+
+.help-text {
+    color: #b0b0b0;
+    font-size: 0.85em;
+    margin-top: 5px;
+    display: block;
+}
